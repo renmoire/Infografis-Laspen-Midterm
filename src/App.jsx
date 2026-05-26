@@ -75,7 +75,7 @@ function App() {
             onClick={() => scrollTo("hero")}
             className="text-white font-black text-sm tracking-wide hover:text-blue-300 transition-colors duration-300"
           >
-            Irenia Maisa Kamila<span className="text-blue-400">.</span>
+            Irenia Maisa Kamila (2506031)<span className="text-blue-400">.</span>
           </button>
           <div className="flex items-center gap-1">
             {navLinks.map(({ id, label }) => (
