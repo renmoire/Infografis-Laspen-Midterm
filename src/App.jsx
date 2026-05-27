@@ -1,78 +1,46 @@
-import { useEffect, useState, useRef } from "react"
-
-// Dynamically load html2canvas
-function loadHtml2Canvas() {
-  return new Promise((resolve, reject) => {
-    if (window.html2canvas) return resolve(window.html2canvas)
-    const script = document.createElement("script")
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
-    script.onload = () => resolve(window.html2canvas)
-    script.onerror = reject
-    document.head.appendChild(script)
-  })
-}
+import { useEffect, useState } from "react"
+import { toPng } from "html-to-image"
 
 // ── EXPORT HELPERS ────────────────────────────────────────────────────────────
-async function captureElement(el, filename) {
-  const h2c = await loadHtml2Canvas()
+const CAPTURE_FILTER = (node) =>
+  !node.classList?.contains("no-capture") && node.tagName !== "NAV"
 
-  // Temporarily unhide overflows so full content is captured
+async function captureElement(el, filename) {
   const prevOverflow = document.body.style.overflow
   document.body.style.overflow = "visible"
-
-  const canvas = await h2c(el, {
-    backgroundColor: "#0a0f1e",
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    scrollX: 0,
-    scrollY: -window.scrollY,
-    windowWidth: document.documentElement.scrollWidth,
-    windowHeight: el.scrollHeight,
-    ignoreElements: (node) =>
-      node.classList?.contains("no-capture") || node.tagName === "NAV",
-  })
-
-  document.body.style.overflow = prevOverflow
-
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob)
+  try {
+    const dataUrl = await toPng(el, {
+      backgroundColor: "#0a0f1e",
+      pixelRatio: 2,
+      filter: CAPTURE_FILTER,
+    })
     const a = document.createElement("a")
-    a.href = url
+    a.href = dataUrl
     a.download = filename
     a.click()
-    URL.revokeObjectURL(url)
-  }, "image/png")
+  } finally {
+    document.body.style.overflow = prevOverflow
+  }
 }
 
 async function captureFullPage(filename) {
-  const h2c = await loadHtml2Canvas()
   const prevOverflow = document.body.style.overflow
   document.body.style.overflow = "visible"
-
-  const canvas = await h2c(document.body, {
-    backgroundColor: "#0a0f1e",
-    scale: 2,
-    useCORS: true,
-    allowTaint: true,
-    scrollX: 0,
-    scrollY: 0,
-    windowWidth: document.documentElement.scrollWidth,
-    windowHeight: document.documentElement.scrollHeight,
-    ignoreElements: (node) =>
-      node.classList?.contains("no-capture") || node.tagName === "NAV",
-  })
-
-  document.body.style.overflow = prevOverflow
-
-  canvas.toBlob((blob) => {
-    const url = URL.createObjectURL(blob)
+  try {
+    const dataUrl = await toPng(document.body, {
+      backgroundColor: "#0a0f1e",
+      pixelRatio: 2,
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
+      filter: CAPTURE_FILTER,
+    })
     const a = document.createElement("a")
-    a.href = url
+    a.href = dataUrl
     a.download = filename
     a.click()
-    URL.revokeObjectURL(url)
-  }, "image/png")
+  } finally {
+    document.body.style.overflow = prevOverflow
+  }
 }
 
 // ── EXPORT PANEL COMPONENT ────────────────────────────────────────────────────
