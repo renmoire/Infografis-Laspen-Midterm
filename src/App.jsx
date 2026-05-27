@@ -239,7 +239,7 @@ function App() {
             onClick={() => scrollTo("hero")}
             className="text-white font-black text-sm tracking-wide hover:text-blue-300 transition-colors duration-300"
           >
-            Irenia Maisa Kamila (2506031)<span className="text-blue-400">.</span>
+            Irenia Maisa Kamila<span className="text-blue-400"> (2506031)</span>.
           </button>
 
           {/* Desktop nav */}
@@ -354,7 +354,7 @@ function App() {
       {/* ── SECTION 2 — ANALISIS KRITIS ── */}
       <section id="analisis" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
         <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Analisis Kritis
+          Analisis
         </span>
         <h2 className="text-white font-black text-xl mt-4 mb-6">Dampak Perkembangan Teknologi</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -401,10 +401,10 @@ function App() {
       {/* ── SECTION 4 — KRITIK PANCASILA ── */}
       <section id="kritik" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
         <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Kritik Pendidikan
+          Implementasi pada Pancasila
         </span>
-        <h2 className="text-white font-black text-xl mt-4 mb-2">Kritik Implementasi Nilai Pancasila</h2>
-        <p className="text-white/50 text-sm mb-6">dalam Praktik Pendidikan Indonesia</p>
+        <h2 className="text-white font-black text-xl mt-4 mb-2">Evaluasi Implementasi Nilai Pancasila</h2>
+        <p className="text-white/50 text-sm mb-6">Dalam Praktik Pendidikan Indonesia</p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { sila: "Sila 1", label: "Ketuhanan", kritik: "Pendidikan agama cenderung ritualistik, belum sepenuhnya membentuk akhlak dan toleransi antar umat beragama." },
@@ -424,10 +424,10 @@ function App() {
       {/* ── SECTION 5 — STRATEGI ── */}
       <section id="strategi" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10 pb-28">
         <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Strategi
+          Integrasi Landasan Pendidikan
         </span>
         <h2 className="text-white font-black text-xl mt-4 mb-2">Strategi Integrasi Landasan Pendidikan</h2>
-        <p className="text-white/50 text-sm mb-6">Menghadapi Era VUCA & Membentuk Generasi Unggul</p>
+        <p className="text-white/50 text-sm mb-6">Dalam Menghadapi Era VUCA & Membentuk Generasi Unggul</p>
         <div className="space-y-3">
           {[
             { no: "01", warna: "from-blue-600 to-blue-800",    landasan: "Filosofis",   icon: "💡", strategi: "Menanamkan Pancasila sebagai falsafah hidup",              deskripsi: "Pendidikan harus berakar pada nilai-nilai Pancasila sebagai panduan berpikir dan bertindak, bukan sekadar hafalan." },
