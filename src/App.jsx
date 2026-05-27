@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 function App() {
   const [scrolled, setScrolled] = useState(false)
   const [activeSection, setActiveSection] = useState("hero")
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -25,6 +26,13 @@ function App() {
     return () => observers.forEach((o) => o?.disconnect())
   }, [])
 
+  // Close menu on scroll
+  useEffect(() => {
+    const onScroll = () => { if (menuOpen) setMenuOpen(false) }
+    window.addEventListener("scroll", onScroll)
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [menuOpen])
+
   const navLinks = [
     { id: "analisis", label: "Analisis" },
     { id: "era40",    label: "Peran" },
@@ -33,12 +41,13 @@ function App() {
   ]
 
   const scrollTo = (id) => {
-  const el = document.getElementById(id)
-  if (!el) return
-  const offset = 80 // sesuaikan dengan tinggi navbar
-  const top = el.getBoundingClientRect().top + window.scrollY - offset
-  window.scrollTo({ top, behavior: "smooth" })
-}
+    const el = document.getElementById(id)
+    if (!el) return
+    const offset = 80
+    const top = el.getBoundingClientRect().top + window.scrollY - offset
+    window.scrollTo({ top, behavior: "smooth" })
+    setMenuOpen(false)
+  }
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -63,21 +72,24 @@ function App() {
       <nav
         className="fixed top-0 left-0 right-0 z-50 transition-all duration-500"
         style={{
-          background: scrolled ? "rgba(10, 15, 30, 0.72)" : "transparent",
-          backdropFilter: scrolled ? "blur(18px)" : "none",
-          WebkitBackdropFilter: scrolled ? "blur(18px)" : "none",
-          borderBottom: scrolled ? "1px solid rgba(255,255,255,0.07)" : "1px solid transparent",
-          boxShadow: scrolled ? "0 4px 30px rgba(0,0,0,0.25)" : "none",
+          background: scrolled || menuOpen ? "rgba(10, 15, 30, 0.92)" : "transparent",
+          backdropFilter: scrolled || menuOpen ? "blur(18px)" : "none",
+          WebkitBackdropFilter: scrolled || menuOpen ? "blur(18px)" : "none",
+          borderBottom: scrolled || menuOpen ? "1px solid rgba(255,255,255,0.07)" : "1px solid transparent",
+          boxShadow: scrolled || menuOpen ? "0 4px 30px rgba(0,0,0,0.25)" : "none",
         }}
       >
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          {/* Logo */}
           <button
             onClick={() => scrollTo("hero")}
             className="text-white font-black text-sm tracking-wide hover:text-blue-300 transition-colors duration-300"
           >
             Irenia Maisa Kamila (2506031)<span className="text-blue-400">.</span>
           </button>
-          <div className="flex items-center gap-1">
+
+          {/* Desktop nav links */}
+          <div className="hidden md:flex items-center gap-1">
             {navLinks.map(({ id, label }) => (
               <button
                 key={id}
@@ -87,6 +99,59 @@ function App() {
                   color: activeSection === id ? "#fff" : "rgba(255,255,255,0.45)",
                   background: activeSection === id ? "rgba(37,99,255,0.22)" : "transparent",
                   border: activeSection === id ? "1px solid rgba(99,153,255,0.35)" : "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Hamburger button — mobile only */}
+          <button
+            onClick={() => setMenuOpen((v) => !v)}
+            className="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-lg transition-all duration-300 hover:bg-white/10"
+            aria-label="Toggle menu"
+          >
+            <span
+              className="block w-5 h-0.5 bg-white transition-all duration-300 origin-center"
+              style={{
+                transform: menuOpen ? "translateY(8px) rotate(45deg)" : "none",
+              }}
+            />
+            <span
+              className="block w-5 h-0.5 bg-white transition-all duration-300"
+              style={{
+                opacity: menuOpen ? 0 : 1,
+                transform: menuOpen ? "scaleX(0)" : "none",
+              }}
+            />
+            <span
+              className="block w-5 h-0.5 bg-white transition-all duration-300 origin-center"
+              style={{
+                transform: menuOpen ? "translateY(-8px) rotate(-45deg)" : "none",
+              }}
+            />
+          </button>
+        </div>
+
+        {/* Mobile dropdown menu */}
+        <div
+          className="md:hidden overflow-hidden transition-all duration-300 ease-in-out"
+          style={{
+            maxHeight: menuOpen ? "260px" : "0px",
+            opacity: menuOpen ? 1 : 0,
+          }}
+        >
+          <div className="px-6 pb-4 flex flex-col gap-2">
+            {navLinks.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => scrollTo(id)}
+                className="w-full text-left px-4 py-3 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200"
+                style={{
+                  color: activeSection === id ? "#fff" : "rgba(255,255,255,0.55)",
+                  background: activeSection === id ? "rgba(37,99,255,0.22)" : "rgba(255,255,255,0.04)",
+                  border: activeSection === id ? "1px solid rgba(99,153,255,0.35)" : "1px solid rgba(255,255,255,0.07)",
                 }}
               >
                 {label}
@@ -130,11 +195,11 @@ function App() {
       </div>
 
       {/* ── HERO ── */}
-      <section id="hero" className="relative z-10 max-w-4xl mx-auto px-6 pt-24 pb-16">
+      <section id="hero" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-24 pb-16">
         <span className="text-xs font-semibold tracking-widest uppercase text-blue-300 border border-blue-800 rounded-full px-3 py-1">
           Landasan Pendidikan
         </span>
-        <h1 className="text-6xl font-black mt-6 leading-tight text-white">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mt-6 leading-tight text-white">
           Pendidikan sebagai<br />
           <span className="text-blue-400">Gerakan Semesta</span>
         </h1>
@@ -148,25 +213,8 @@ function App() {
         </div>
       </section>
 
-      {/* ── SECTION 1 — REFLEKSI ──
-      <section className="relative z-10 max-w-4xl mx-auto px-6 py-10">
-        <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Refleksi
-        </span>
-        <div className="reveal mt-6 glass-card-blue rounded-xl p-8">
-          <p className="text-white text-xl font-black italic leading-snug">
-            "Landasan pendidikan membantu membentuk cara berpikir kritis, karakter, dan kesadaran sosial sebagai calon agen perubahan."
-          </p>
-        </div>
-        <div className="reveal mt-4 glass-card-light rounded-xl p-6 card-hover">
-          <p className="text-[#444] text-base leading-relaxed">
-            Melalui mata kuliah Landasan Pendidikan, mahasiswa tidak hanya memahami teori pendidikan, tetapi juga memahami pentingnya nilai kemanusiaan, etika, dan tanggung jawab sosial dalam dunia modern.
-          </p>
-        </div>
-      </section> */}
-
       {/* ── SECTION 2 — ANALISIS KRITIS ── */}
-      <section id="analisis" className="relative z-10 max-w-4xl mx-auto px-6 py-10">
+      <section id="analisis" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
         <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
           Analisis Kritis
         </span>
@@ -192,11 +240,11 @@ function App() {
       </section>
 
       {/* ── SECTION 3 — ERA 4.0 & VUCA ── */}
-      <section id="era40" className="relative z-10 max-w-4xl mx-auto px-6 py-10">
+      <section id="era40" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
         <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
           Peran Landasan Pendidikan
         </span>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
           {[
             { icon: "⚙️", title: "Revolusi Industri 4.0", body: "Teknologi digital mengubah cara manusia belajar, bekerja, dan berkomunikasi.", blue: true },
             { icon: "🌐", title: "Society 5.0", body: "Teknologi harus digunakan untuk meningkatkan kualitas hidup manusia, bukan menggantikan nilai kemanusiaan.", blue: false },
@@ -213,7 +261,7 @@ function App() {
       </section>
 
       {/* ── SECTION 4 — KRITIK PANCASILA ── */}
-      <section id="kritik" className="relative z-10 max-w-4xl mx-auto px-6 py-10">
+      <section id="kritik" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
         <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
           Kritik Pendidikan
         </span>
@@ -225,22 +273,18 @@ function App() {
             {
               sila: "Sila 1", label: "Ketuhanan",
               kritik: "Pendidikan agama cenderung ritualistik, belum sepenuhnya membentuk akhlak dan toleransi antar umat beragama.",
-              // fakta: "Kasus intoleransi di lingkungan sekolah masih terjadi di berbagai daerah (SETARA Institute, 2023).",
             },
             {
               sila: "Sila 2", label: "Kemanusiaan",
               kritik: "Bullying dan kekerasan di sekolah masih marak, menandakan lemahnya internalisasi nilai kemanusiaan.",
-              // fakta: "KPAI mencatat ribuan kasus kekerasan di lingkungan pendidikan setiap tahunnya.",
             },
             {
               sila: "Sila 3", label: "Persatuan",
               kritik: "Kesenjangan kualitas pendidikan antara daerah 3T dan kota besar mencerminkan belum terwujudnya persatuan dalam akses pendidikan.",
-              // fakta: "Indeks Pembangunan Manusia daerah 3T masih jauh di bawah rata-rata nasional (BPS, 2023).",
             },
             {
               sila: "Sila 4 & 5", label: "Kerakyatan & Keadilan",
               kritik: "Kebijakan pendidikan sering top-down tanpa melibatkan komunitas lokal. Akses internet dan perangkat digital masih timpang.",
-              // fakta: "Hanya 54% sekolah di Indonesia memiliki akses internet yang memadai (Kemendikbud, 2022).",
             },
           ].map((item, i) => (
             <div key={i} className="reveal card-hover glass-card rounded-xl p-6" style={{ animationDelay: `${i * 0.1}s` }}>
@@ -251,17 +295,13 @@ function App() {
                 </div>
               </div>
               <p className="text-white/70 text-medium leading-relaxed">{item.kritik}</p>
-              {/* <div className="border-t border-white/10 pt-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400">📊 Fakta</span>
-                <p className="text-yellow-200/70 text-xs mt-1 leading-relaxed">{item.fakta}</p>
-              </div> */}
             </div>
           ))}
         </div>
       </section>
 
       {/* ── SECTION 5 — STRATEGI INTEGRASI LANDASAN ── */}
-      <section id="strategi" className="relative z-10 max-w-4xl mx-auto px-6 py-10j pb-35">
+      <section id="strategi" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10 pb-35">
         <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
           Strategi
         </span>
@@ -303,11 +343,11 @@ function App() {
           ].map((item, i) => (
             <div key={i} className="reveal card-hover flex gap-4 glass-card rounded-xl p-5 overflow-hidden relative"
               style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className={`shrink-0 w-12 h-12 rounded-xl ${item.warna} flex items-center justify-center text-xl`}>
+              <div className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${item.warna} flex items-center justify-center text-xl`}>
                 {item.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-[15px] font-black text-white/30 tracking-widest">{item.no}</span>
                   <span className="text-[10px] font-bold uppercase tracking-widest text-blue-300 bg-blue-900/20 px-2 py-0.5 rounded-full">Landasan {item.landasan}</span>
                 </div>
@@ -318,17 +358,6 @@ function App() {
           ))}
         </div>
       </section>
-
-      {/* ── CLOSING ──
-      <section className="relative z-10 max-w-4xl mx-auto px-6 py-10 pb-24">
-        <div className="reveal glass-card-dark rounded-xl p-10 text-center">
-          <span className="text-xs font-bold tracking-widest uppercase text-white/40">Kesimpulan</span>
-          <p className="text-white text-xl font-black mt-4 leading-relaxed">
-            Landasan pendidikan menjadi dasar penting dalam membentuk generasi yang cerdas, berkarakter, dan mampu menghadapi tantangan era modern
-            <span className="text-blue-400"> tanpa kehilangan nilai kemanusiaan dan identitas bangsa.</span>
-          </p>
-        </div>
-      </section> */}
 
     </div>
   )
