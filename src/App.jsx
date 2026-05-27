@@ -7,11 +7,14 @@ const CAPTURE_FILTER = (node) =>
 
 async function captureElement(el, filename) {
   const prevOverflow = document.body.style.overflow
+  const prevWidth = document.body.style.minWidth
   document.body.style.overflow = "visible"
+  document.body.style.minWidth = "1024px"
   try {
     const dataUrl = await toPng(el, {
       backgroundColor: "#0a0f1e",
       pixelRatio: 2,
+      width: 1024,
       filter: CAPTURE_FILTER,
     })
     const a = document.createElement("a")
@@ -20,6 +23,7 @@ async function captureElement(el, filename) {
     a.click()
   } finally {
     document.body.style.overflow = prevOverflow
+    document.body.style.minWidth = prevWidth  
   }
 }
 
@@ -49,11 +53,10 @@ function ExportPanel() {
   const [loading, setLoading] = useState(null)
 
   const sections = [
-    { id: "hero",     label: "Hero — Gerakan Semesta",       icon: "🌌" },
-    { id: "analisis", label: "Analisis Teknologi",           icon: "📊" },
+    { id: "analisis", label: "Analisis",           icon: "📊" },
     { id: "era40",    label: "Peran Landasan Pendidikan",    icon: "⚙️" },
-    { id: "kritik",   label: "Kritik Nilai Pancasila",       icon: "📋" },
-    { id: "strategi", label: "Strategi Integrasi",           icon: "🗺️" },
+    { id: "kritik",   label: "Implementasi Pada Pancasila",       icon: "📋" },
+    { id: "strategi", label: "Integrasi Landasan Pendidikan",           icon: "🗺️" },
   ]
 
   const handleFullPage = async () => {
