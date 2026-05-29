@@ -8,8 +8,15 @@ async function captureSec(el, name) {
   const pO = document.body.style.overflow, pM = document.body.style.minWidth
   document.body.style.overflow = "visible"
   document.body.style.minWidth = "1024px"
+  await new Promise(r => setTimeout(r, 100))
   try {
-    const url = await toPng(el, { backgroundColor: "#faf7f2", pixelRatio: 2, width: 1024, filter: FILTER })
+    const url = await toPng(el, {
+      backgroundColor: "#faf7f2",
+      pixelRatio: 2,
+      width: 1024,
+      height: el.scrollHeight,
+      filter: FILTER
+    })
     Object.assign(document.createElement("a"), { href: url, download: name }).click()
   } finally { document.body.style.overflow = pO; document.body.style.minWidth = pM }
 }
@@ -230,11 +237,11 @@ export default function App() {
             di Era Society 5.0 &nbsp;·&nbsp; Infografis Pendidikan
           </p>
 
-          {/* <div className="reveal" style={{ maxWidth:"560px", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"16px", padding:"1.5rem" }}>
+          <div className="reveal" style={{ maxWidth:"560px", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"16px", padding:"1.5rem" }}>
             <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.9rem", lineHeight:1.7, color:"rgba(26,20,16,0.6)" }}>
               Pendidikan bukan hanya proses belajar — ia adalah fondasi pembentukan karakter, moral, dan kesiapan generasi menghadapi perubahan global yang semakin kompleks.
             </p>
-          </div> */}
+          </div>
 
           <div className="reveal" style={{ marginTop:"3rem", display:"flex", alignItems:"center", gap:"12px" }}>
             <div style={{ width:"1px", height:"48px", background:"#c0622a", opacity:0.4 }} />
@@ -257,13 +264,13 @@ export default function App() {
 
           <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
             <div style={{ width:"24px", height:"2px", background:"#c0622a" }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Analisis</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Analisis Kritis</span>
           </div>
 
           <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
             Dampak Perkembangan<br /><span style={{ color:"#c0622a" }}>Teknologi</span>
           </h2>
-          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>Dalam Dunia Pendidikan Indonesia</p>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>dalam Dunia Pendidikan Indonesia</p>
 
           {/* pos/neg split — flat solid */}
           <div className="reveal two-col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1px", background:"rgba(26,20,16,0.07)", borderRadius:"20px", overflow:"hidden" }}>
@@ -318,12 +325,12 @@ export default function App() {
           </div>
 
           {/* quote */}
-          {/* <div className="reveal" style={{ marginTop:"2.5rem", padding:"2rem 2rem 2rem 2.5rem", borderLeft:"3px solid #c0622a", background:"rgba(192,98,42,0.05)", borderRadius:"0 12px 12px 0" }}>
+          <div className="reveal" style={{ marginTop:"2.5rem", padding:"2rem 2rem 2rem 2.5rem", borderLeft:"3px solid #c0622a", background:"rgba(192,98,42,0.05)", borderRadius:"0 12px 12px 0" }}>
             <p className="serif" style={{ fontSize:"clamp(1rem,2.5vw,1.3rem)", fontWeight:700, fontStyle:"italic", color:"#1a1410", lineHeight:1.5 }}>
               "Teknologi adalah alat — karakter manusia yang menentukan arahnya."
             </p>
             <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.7rem", color:"#7a6a5a", marginTop:"0.75rem", letterSpacing:"0.1em", textTransform:"uppercase" }}>Refleksi Landasan Pendidikan</p>
-          </div> */}
+          </div>
         </div>
       </section>
 
@@ -350,9 +357,9 @@ export default function App() {
 
           <div style={{ display:"flex", flexDirection:"column" }}>
             {[
-              { icon:"⚙️", color:"#c0622a",  bg:"rgba(192,98,42,0.1)",  label:"Revolusi Industri 4.0", tag:"Teknologi & Industri", body:"Revolusi Industri 4.0 ditandai dengan perkembangan teknologi digital seperti AI, IoT, dan big data yang mengubah cara manusia belajar, bekerja, dan berkomunikasi. Pendidikan dituntut untuk menghasilkan lulusan yang adaptif, kreatif, dan mampu mengikuti perkembangan teknologi." },
-              { icon:"🌐", color:"#5a8a5e",  bg:"rgba(90,138,94,0.1)",  label:"Society 5.0",           tag:"Humanisasi Teknologi",  body:"Society 5.0 merupakan konsep yang menempatkan manusia sebagai pusat kemajuan teknologi. Pendidikan harus memastikan bahwa teknologi digunakan untuk meningkatkan kualitas hidup tanpa menghilangkan nilai kemanusiaan." },
-              { icon:"🌪️", color:"#b84a2e",  bg:"rgba(184,74,46,0.1)",   label:"Era VUCA",              tag:"Ketidakpastian Global", body:"Era VUCA menggambarkan kondisi dunia yang penuh perubahan, ketidakpastian, kompleksitas, dan ambiguitas. Oleh karena itu, pendidikan dengan landasan yang kuat sangat penting agar mampu menghadapi tantangan masa depan." },
+              { icon:"⚙️", color:"#c0622a",  bg:"rgba(192,98,42,0.1)",  label:"Revolusi Industri 4.0", tag:"Teknologi & Industri", body:"Teknologi digital — AI, IoT, big data — mengubah fundamental cara manusia belajar, bekerja, dan berkomunikasi. Pendidikan dituntut menghasilkan lulusan yang adaptif dan melek teknologi." },
+              { icon:"🌐", color:"#5a8a5e",  bg:"rgba(90,138,94,0.1)",  label:"Society 5.0",           tag:"Humanisasi Teknologi",  body:"Visi yang menempatkan manusia sebagai pusat kemajuan teknologi. Pendidikan harus memastikan teknologi meningkatkan martabat manusia — bukan menggantikan nilai kemanusiaan." },
+              { icon:"🌪️", color:"#b84a2e",  bg:"rgba(184,74,46,0.1)",   label:"Era VUCA",              tag:"Ketidakpastian Global", body:"Volatile, Uncertain, Complex, Ambiguous. Pendidikan berbasis landasan yang kuat adalah bekal utama menghadapi perubahan yang tidak bisa diprediksi." },
             ].map((item, i) => (
               <div key={i} className="reveal" style={{ display:"grid", gridTemplateColumns:"72px 1fr", gap:"1.5rem", padding:"2rem 0", borderBottom: i<2 ? "1px solid rgba(26,20,16,0.07)" : "none", alignItems:"start" }}>
                 <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px" }}>
@@ -385,7 +392,7 @@ export default function App() {
 
           <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
             <div style={{ width:"24px", height:"2px", background:"#b84a2e" }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Evaluasi</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Evaluasi Kritis</span>
           </div>
 
           <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
@@ -490,7 +497,7 @@ export default function App() {
           </div>
 
           {/* footer */}
-          {/* <div className="reveal" style={{ marginTop:"3rem", padding:"1.25rem 1.5rem", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"12px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.5rem" }}>
+          <div className="reveal" style={{ marginTop:"3rem", padding:"1.25rem 1.5rem", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"12px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.5rem" }}>
             <div>
               <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.8rem", color:"#1a1410" }}>Irenia Maisa Kamila</p>
               <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", color:"#7a6a5a", letterSpacing:"0.1em" }}>NIM 2506031</p>
@@ -500,7 +507,7 @@ export default function App() {
                 <span key={t} style={{ display:"inline-flex", alignItems:"center", gap:"6px", padding:"4px 12px", background:"rgba(26,20,16,0.05)", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"99px", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.7rem", color:"#7a6a5a" }}>{t}</span>
               ))}
             </div>
-          </div> */}
+          </div>
         </div>
       </section>
 
