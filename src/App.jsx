@@ -5,20 +5,39 @@ import { toPng } from "html-to-image"
 const FILTER = (n) => !n.classList?.contains("no-capture") && n.tagName !== "NAV"
 
 async function captureSec(el, name) {
-  const pO = document.body.style.overflow, pM = document.body.style.minWidth
+  // Simpan style asli
+  const pO = document.body.style.overflow
+  const pM = document.body.style.minWidth
+  const pEH = el.style.height
+  const pEO = el.style.overflow
+
+  // Buka semua overflow supaya tinggi penuh terbaca
   document.body.style.overflow = "visible"
   document.body.style.minWidth = "1024px"
-  await new Promise(r => setTimeout(r, 100))
+  el.style.height = "auto"
+  el.style.overflow = "visible"
+
+  // Tunggu browser reflow selesai
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))
+
+  const fullHeight = el.getBoundingClientRect().height
+
   try {
     const url = await toPng(el, {
       backgroundColor: "#faf7f2",
       pixelRatio: 2,
       width: 1024,
-      height: el.scrollHeight,
+      height: Math.ceil(fullHeight),
+      style: { height: Math.ceil(fullHeight) + "px", overflow: "visible" },
       filter: FILTER
     })
     Object.assign(document.createElement("a"), { href: url, download: name }).click()
-  } finally { document.body.style.overflow = pO; document.body.style.minWidth = pM }
+  } finally {
+    document.body.style.overflow = pO
+    document.body.style.minWidth = pM
+    el.style.height = pEH
+    el.style.overflow = pEO
+  }
 }
 async function captureFull(name) {
   const pO = document.body.style.overflow
@@ -57,20 +76,20 @@ function ExportFAB() {
       {open && (
         <div style={{ display:"flex", flexDirection:"column", gap:"6px", alignItems:"flex-end" }}>
           <button onClick={() => go("full")} disabled={!!busy}
-            style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", padding:"8px 18px", background:"#c0622a", color:"#faf7f2", border:"none", borderRadius:"99px", cursor:"pointer", whiteSpace:"nowrap", opacity: busy ? 0.5 : 1 }}>
+            style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", padding:"8px 18px", background:"#c0622a", color:"#faf7f2", border:"none", borderRadius:"99px", cursor:"pointer", whiteSpace:"nowrap", opacity: busy ? 0.5 : 1 }}>
             {busy==="full" ? "···" : "↓ Full Page"}
           </button>
           <div style={{ width:"100%", height:"1px", background:"rgba(26,20,16,0.09)" }} />
           {items.map(({ id, label }) => (
             <button key={id} onClick={() => go(id)} disabled={!!busy}
-              style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", padding:"8px 18px", background:"#ede8db", color: busy===id ? "#c0622a" : "rgba(255,255,255,0.6)", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"99px", cursor:"pointer", whiteSpace:"nowrap", opacity: busy&&busy!==id ? 0.4 : 1 }}>
+              style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", padding:"8px 18px", background:"#ede8db", color: busy===id ? "#c0622a" : "rgba(255,255,255,0.6)", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"99px", cursor:"pointer", whiteSpace:"nowrap", opacity: busy&&busy!==id ? 0.4 : 1 }}>
               {busy===id ? "···" : `↓ ${label}`}
             </button>
           ))}
         </div>
       )}
       <button onClick={() => setOpen(v => !v)}
-        style={{ width:"44px", height:"44px", borderRadius:"50%", background: open ? "rgba(26,20,16,0.09)" : "#c0622a", color: open ? "#fff" : "#faf7f2", border:"1px solid rgba(255,255,255,0.15)", cursor:"pointer", fontSize:"1.1rem", fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.3s ease" }}>
+        style={{ width:"44px", height:"44px", borderRadius:"50%", background: open ? "rgba(26,20,16,0.09)" : "#c0622a", color: open ? "#fff" : "#faf7f2", border:"1px solid rgba(255,255,255,0.15)", cursor:"pointer", fontSize:"1.375rem", fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.3s ease" }}>
         {open ? "✕" : "↓"}
       </button>
     </div>
@@ -147,7 +166,7 @@ export default function App() {
   return (
     <div style={{ minHeight:"100vh", background:"#faf7f2" }}>
 
-      {/* progress bar — solid, no gradient */}
+      {/* progress bar */}
       <div style={{ position:"fixed", top:0, left:0, height:"2px", width:`${progress}%`, background:"#c0622a", zIndex:9999, transition:"width 0.1s linear" }} />
 
       <ExportFAB />
@@ -162,8 +181,8 @@ export default function App() {
       }}>
         <div style={{ maxWidth:"900px", margin:"0 auto", padding:"0 1.5rem", height:"64px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <button onClick={() => go("hero")} style={{ background:"none", border:"none", cursor:"pointer", textAlign:"left" }}>
-            <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:"0.85rem", color:"#1a1410", lineHeight:1.2 }}>Irenia Maisa Kamila</div>
-            <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:600, letterSpacing:"0.14em", color:"#c0622a", textTransform:"uppercase" }}>2506031</div>
+            <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:"1.062rem", color:"#1a1410", lineHeight:1.2 }}>Irenia Maisa Kamila</div>
+            <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.75rem", fontWeight:600, letterSpacing:"0.14em", color:"#c0622a", textTransform:"uppercase" }}>2506031</div>
           </button>
 
           <div className="hide-mobile" style={{ display:"flex", gap:"4px" }}>
@@ -188,7 +207,7 @@ export default function App() {
           <div style={{ maxWidth:"900px", margin:"0 auto", padding:"1rem 1.5rem", display:"flex", flexDirection:"column", gap:"4px" }}>
             {navLinks.map(({ id, label }) => (
               <button key={id} onClick={() => go(id)}
-                style={{ background: active===id ? "rgba(192,98,42,0.1)" : "transparent", border:"none", borderRadius:"10px", cursor:"pointer", padding:"0.75rem 1rem", textAlign:"left", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.85rem", fontWeight:600, color: active===id ? "#c0622a" : "#7a6a5a" }}>
+                style={{ background: active===id ? "rgba(192,98,42,0.1)" : "transparent", border:"none", borderRadius:"10px", cursor:"pointer", padding:"0.75rem 1rem", textAlign:"left", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"1.062rem", fontWeight:600, color: active===id ? "#c0622a" : "#7a6a5a" }}>
                 {label}
               </button>
             ))}
@@ -210,42 +229,37 @@ export default function App() {
       ══════════════════════════════════════ */}
       <section id="hero" style={{ position:"relative", minHeight:"100svh", display:"flex", flexDirection:"column", justifyContent:"center", overflow:"hidden", background:"#faf7f2" }}>
 
-        {/* dot grid — flat, no gradient */}
         <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(rgba(26,20,16,0.06) 1px, transparent 1px)", backgroundSize:"28px 28px", pointerEvents:"none" }} />
-
-        {/* corner accent blocks */}
         <div style={{ position:"absolute", top:0, right:0, width:"280px", height:"280px", background:"#c0622a", opacity:0.06, clipPath:"polygon(100% 0, 0 0, 100% 100%)" }} />
         <div style={{ position:"absolute", bottom:0, left:0, width:"200px", height:"200px", background:"#5a8a5e", opacity:0.06, clipPath:"polygon(0 100%, 0 0, 100% 100%)" }} />
 
         <div style={{ maxWidth:"900px", margin:"0 auto", padding:"7rem 1.5rem 5rem", position:"relative", zIndex:1 }}>
 
-          {/* badge */}
           <div className="reveal" style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"5px 14px", borderRadius:"99px", border:"1px solid rgba(192,98,42,0.3)", background:"rgba(192,98,42,0.08)", marginBottom:"2rem" }}>
             <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#5a8a5e", flexShrink:0 }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#5a8a5e" }}>Landasan Pendidikan · 2025</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#5a8a5e" }}>Landasan Pendidikan · 2025</span>
           </div>
 
-          {/* headline — solid colors, no gradient text */}
-          <h1 className="reveal serif" style={{ fontSize:"clamp(3rem,9vw,6.5rem)", fontWeight:900, lineHeight:0.95, letterSpacing:"-0.03em", color:"#1a1410", marginBottom:"1.5rem" }}>
+          <h1 className="reveal serif" style={{ fontSize:"clamp(3.75rem, 9.9vw, 8.125rem)", fontWeight:900, lineHeight:0.95, letterSpacing:"-0.03em", color:"#1a1410", marginBottom:"1.5rem" }}>
             Pendidikan<br />
             <span style={{ fontStyle:"italic", color:"#c0622a" }}>sebagai</span><br />
             Gerakan<br />
             <span style={{ fontStyle:"italic", color:"#b84a2e" }}>Semesta</span>
           </h1>
 
-          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.75rem", fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:"#7a6a5a", marginBottom:"2.5rem" }}>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.938rem", fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:"#7a6a5a", marginBottom:"2.5rem" }}>
             di Era Society 5.0 &nbsp;·&nbsp; Infografis Pendidikan
           </p>
 
           <div className="reveal" style={{ maxWidth:"560px", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"16px", padding:"1.5rem" }}>
-            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.9rem", lineHeight:1.7, color:"rgba(26,20,16,0.6)" }}>
+            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"1.125rem", lineHeight:1.7, color:"rgba(26,20,16,0.6)" }}>
               Pendidikan bukan hanya proses belajar — ia adalah fondasi pembentukan karakter, moral, dan kesiapan generasi menghadapi perubahan global yang semakin kompleks.
             </p>
           </div>
 
           <div className="reveal" style={{ marginTop:"3rem", display:"flex", alignItems:"center", gap:"12px" }}>
             <div style={{ width:"1px", height:"48px", background:"#c0622a", opacity:0.4 }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:"#7a6a5a" }}>Scroll untuk eksplorasi</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:"#7a6a5a" }}>Scroll untuk eksplorasi</span>
           </div>
         </div>
       </section>
@@ -257,32 +271,29 @@ export default function App() {
       ══════════════════════════════════════ */}
       <section id="analisis" style={{ position:"relative", padding:"5rem 0", background:"#faf7f2" }}>
 
-        {/* side accent stripe */}
         <div style={{ position:"absolute", top:0, right:0, width:"3px", height:"100%", background:"#c0622a", opacity:0.15 }} />
 
         <div style={{ maxWidth:"900px", margin:"0 auto", padding:"0 1.5rem" }}>
 
           <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
             <div style={{ width:"24px", height:"2px", background:"#c0622a" }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Analisis Kritis</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Analisis</span>
           </div>
 
-          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2.5rem, 5.5vw, 4.375rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
             Dampak Perkembangan<br /><span style={{ color:"#c0622a" }}>Teknologi</span>
           </h2>
-          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>dalam Dunia Pendidikan Indonesia</p>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"1.062rem", marginBottom:"3rem" }}>Dalam Dunia Pendidikan Indonesia</p>
 
-          {/* pos/neg split — flat solid */}
           <div className="reveal two-col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1px", background:"rgba(26,20,16,0.07)", borderRadius:"20px", overflow:"hidden" }}>
 
-            {/* POSITIF */}
             <div style={{ background:"#ede8db", padding:"2rem" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.75rem" }}>
                 <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"4px 12px", borderRadius:"99px", background:"rgba(90,138,94,0.1)", border:"1px solid rgba(90,138,94,0.25)" }}>
                   <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#5a8a5e" }} />
-                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"#5a8a5e" }}>Positif</span>
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"#5a8a5e" }}>Positif</span>
                 </div>
-                <span className="serif" style={{ fontSize:"4rem", fontWeight:900, color:"rgba(90,138,94,0.07)", lineHeight:1 }}>+</span>
+                <span className="serif" style={{ fontSize:"5.0rem", fontWeight:900, color:"rgba(90,138,94,0.07)", lineHeight:1 }}>+</span>
               </div>
               {[
                 { h:"Akses Informasi",      b:"Informasi tersedia lebih cepat dan melampaui batas geografis." },
@@ -292,21 +303,20 @@ export default function App() {
                 <div key={i} style={{ display:"flex", gap:"12px", marginBottom: i<2?"1.25rem":"0", paddingBottom: i<2?"1.25rem":"0", borderBottom: i<2?"1px solid rgba(26,20,16,0.06)":"none" }}>
                   <div style={{ width:"3px", borderRadius:"99px", background:"#5a8a5e", flexShrink:0, alignSelf:"stretch", minHeight:"36px" }} />
                   <div>
-                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.85rem", color:"#1a1410", marginBottom:"3px" }}>{item.h}</p>
-                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.78rem", color:"#7a6a5a", lineHeight:1.55 }}>{item.b}</p>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"1.062rem", color:"#1a1410", marginBottom:"3px" }}>{item.h}</p>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.975rem", color:"#7a6a5a", lineHeight:1.55 }}>{item.b}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* NEGATIF */}
             <div style={{ background:"#e8e0d0", padding:"2rem" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.75rem" }}>
                 <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"4px 12px", borderRadius:"99px", background:"rgba(184,74,46,0.1)", border:"1px solid rgba(184,74,46,0.25)" }}>
                   <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#b84a2e" }} />
-                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"#b84a2e" }}>Negatif</span>
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"#b84a2e" }}>Negatif</span>
                 </div>
-                <span className="serif" style={{ fontSize:"4rem", fontWeight:900, color:"rgba(184,74,46,0.07)", lineHeight:1 }}>−</span>
+                <span className="serif" style={{ fontSize:"5.0rem", fontWeight:900, color:"rgba(184,74,46,0.07)", lineHeight:1 }}>−</span>
               </div>
               {[
                 { h:"Degradasi Sosial", b:"Menurunnya kualitas interaksi tatap muka dan empati interpersonal." },
@@ -316,20 +326,12 @@ export default function App() {
                 <div key={i} style={{ display:"flex", gap:"12px", marginBottom: i<2?"1.25rem":"0", paddingBottom: i<2?"1.25rem":"0", borderBottom: i<2?"1px solid rgba(26,20,16,0.06)":"none" }}>
                   <div style={{ width:"3px", borderRadius:"99px", background:"#b84a2e", flexShrink:0, alignSelf:"stretch", minHeight:"36px" }} />
                   <div>
-                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.85rem", color:"#1a1410", marginBottom:"3px" }}>{item.h}</p>
-                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.78rem", color:"#7a6a5a", lineHeight:1.55 }}>{item.b}</p>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"1.062rem", color:"#1a1410", marginBottom:"3px" }}>{item.h}</p>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.975rem", color:"#7a6a5a", lineHeight:1.55 }}>{item.b}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
-
-          {/* quote */}
-          <div className="reveal" style={{ marginTop:"2.5rem", padding:"2rem 2rem 2rem 2.5rem", borderLeft:"3px solid #c0622a", background:"rgba(192,98,42,0.05)", borderRadius:"0 12px 12px 0" }}>
-            <p className="serif" style={{ fontSize:"clamp(1rem,2.5vw,1.3rem)", fontWeight:700, fontStyle:"italic", color:"#1a1410", lineHeight:1.5 }}>
-              "Teknologi adalah alat — karakter manusia yang menentukan arahnya."
-            </p>
-            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.7rem", color:"#7a6a5a", marginTop:"0.75rem", letterSpacing:"0.1em", textTransform:"uppercase" }}>Refleksi Landasan Pendidikan</p>
           </div>
         </div>
       </section>
@@ -347,10 +349,10 @@ export default function App() {
 
           <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
             <div style={{ width:"24px", height:"2px", background:"#8b6b3d" }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Peran Landasan Pendidikan</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Peran Landasan Pendidikan</span>
           </div>
 
-          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"3rem", color:"#1a1410" }}>
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2.5rem, 5.5vw, 4.375rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"3rem", color:"#1a1410" }}>
             Revolusi 4.0,{" "}<span style={{ color:"#c0622a" }}>Society 5.0</span>
             <br />&amp; Era <span style={{ fontStyle:"italic" }}>VUCA</span>
           </h2>
@@ -363,15 +365,15 @@ export default function App() {
             ].map((item, i) => (
               <div key={i} className="reveal" style={{ display:"grid", gridTemplateColumns:"72px 1fr", gap:"1.5rem", padding:"2rem 0", borderBottom: i<2 ? "1px solid rgba(26,20,16,0.07)" : "none", alignItems:"start" }}>
                 <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px" }}>
-                  <div style={{ width:"48px", height:"48px", borderRadius:"14px", background:item.bg, border:`1px solid ${item.color}`, borderWidth:"1px", borderStyle:"solid", borderColor:`${item.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.4rem" }}>
+                  <div style={{ width:"48px", height:"48px", borderRadius:"14px", background:item.bg, border:`1px solid ${item.color}`, borderWidth:"1px", borderStyle:"solid", borderColor:`${item.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.75rem" }}>
                     {item.icon}
                   </div>
-                  <span className="serif" style={{ fontSize:"2.5rem", fontWeight:900, color:"rgba(26,20,16,0.05)", lineHeight:1 }}>{String(i+1).padStart(2,"0")}</span>
+                  <span className="serif" style={{ fontSize:"3.125rem", fontWeight:900, color:"rgba(26,20,16,0.05)", lineHeight:1 }}>{String(i+1).padStart(2,"0")}</span>
                 </div>
                 <div style={{ paddingTop:"4px" }}>
-                  <span style={{ display:"inline-block", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:item.color, background:`${item.color}18`, padding:"3px 10px", borderRadius:"99px", marginBottom:"0.6rem" }}>{item.tag}</span>
-                  <h3 className="serif" style={{ fontWeight:700, fontSize:"1.2rem", color:"#1a1410", marginBottom:"0.5rem" }}>{item.label}</h3>
-                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.83rem", lineHeight:1.7, color:"#7a6a5a" }}>{item.body}</p>
+                  <span style={{ display:"inline-block", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.75rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:item.color, background:`${item.color}18`, padding:"3px 10px", borderRadius:"99px", marginBottom:"0.6rem" }}>{item.tag}</span>
+                  <h3 className="serif" style={{ fontWeight:700, fontSize:"1.5rem", color:"#1a1410", marginBottom:"0.5rem" }}>{item.label}</h3>
+                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"1.037rem", lineHeight:1.7, color:"#7a6a5a" }}>{item.body}</p>
                 </div>
               </div>
             ))}
@@ -392,13 +394,13 @@ export default function App() {
 
           <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
             <div style={{ width:"24px", height:"2px", background:"#b84a2e" }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Evaluasi Kritis</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Evaluasi</span>
           </div>
 
-          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2.5rem, 5.5vw, 4.375rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
             Implementasi Nilai <span style={{ fontStyle:"italic", color:"#b84a2e" }}>Pancasila</span>
           </h2>
-          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>dalam Praktik Pendidikan Indonesia</p>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"1.062rem", marginBottom:"3rem" }}>Dalam Praktik Pendidikan Indonesia</p>
 
           <div style={{ display:"flex", flexDirection:"column", gap:"2rem" }}>
   {[
@@ -420,13 +422,13 @@ export default function App() {
     },
   ].map((item, i) => (
     <div key={i} className="reveal" style={{ position:"relative", overflow:"hidden", padding:"2rem", background:item.bg, border:`1px solid ${item.color}30`, borderRadius:"16px" }}>
-      <span className="serif" style={{ position:"absolute", right:"-8px", bottom:"-16px", fontSize:"5.5rem", fontWeight:900, color:"rgba(26,20,16,0.04)", lineHeight:1, pointerEvents:"none", userSelect:"none" }}>{item.n}</span>
+      <span className="serif" style={{ position:"absolute", right:"-8px", bottom:"-16px", fontSize:"6.875rem", fontWeight:900, color:"rgba(26,20,16,0.04)", lineHeight:1, pointerEvents:"none", userSelect:"none" }}>{item.n}</span>
       <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"0.75rem" }}>
-        <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:800, letterSpacing:"0.18em", textTransform:"uppercase", color:item.color }}>{item.sila}</span>
+        <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.75rem", fontWeight:800, letterSpacing:"0.18em", textTransform:"uppercase", color:item.color }}>{item.sila}</span>
         <div style={{ width:"1px", height:"12px", background:`${item.color}50` }} />
-        <h3 className="serif" style={{ fontWeight:700, fontSize:"1.1rem", color:"#1a1410" }}>{item.label}</h3>
+        <h3 className="serif" style={{ fontWeight:700, fontSize:"1.375rem", color:"#1a1410" }}>{item.label}</h3>
       </div>
-      <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.85rem", lineHeight:1.8, color:"rgba(26,20,16,0.65)" }}>{item.paragraf}</p>
+      <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"1.062rem", lineHeight:1.8, color:"rgba(26,20,16,0.65)" }}>{item.paragraf}</p>
     </div>
   ))}
 </div>
@@ -446,13 +448,13 @@ export default function App() {
 
           <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
             <div style={{ width:"24px", height:"2px", background:"#5a8a5e" }} />
-            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Integrasi Landasan Pendidikan</span>
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.812rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Integrasi Landasan Pendidikan</span>
           </div>
 
-          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2.5rem, 5.5vw, 4.375rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
             Strategi Menghadapi <span style={{ fontStyle:"italic", color:"#c0622a" }}>Era VUCA</span>
           </h2>
-          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"1.062rem", marginBottom:"3rem" }}>
             Membentuk generasi unggul melalui integrasi lima landasan pendidikan
           </p>
 
@@ -475,38 +477,24 @@ export default function App() {
   deskripsi:`Setiap anak adalah individu unik dengan gaya belajar, kecepatan perkembangan, dan kebutuhan emosional yang berbeda-beda. Landasan psikologis pendidikan menegaskan bahwa efektivitas pembelajaran sangat bergantung pada seberapa baik kita memahami kondisi psikologis peserta didik. Di era penuh tekanan seperti sekarang, kesehatan mental siswa bukan isu pinggiran — ia adalah fondasi. Pendekatan pembelajaran yang responsif secara emosional, yang memberi ruang untuk gagal dan bangkit kembali, yang menghargai proses bukan hanya hasil, adalah wujud nyata dari pendidikan yang berpusat pada manusia seutuhnya.` },
             ].map((item, i) => (
               <div key={i} className="reveal" style={{ position:"relative", display:"grid", gridTemplateColumns:"56px 1fr", gap:"1.25rem", paddingBottom:"2rem" }}>
-                {/* connector line */}
                 {i < 4 && <div style={{ position:"absolute", left:"23px", top:"52px", bottom:"0", width:"1px", background:"rgba(26,20,16,0.07)" }} />}
 
                 <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"6px" }}>
-                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"0.1em", color:item.color, opacity:0.8 }}>{item.no}</span>
-                  <div style={{ width:"46px", height:"46px", borderRadius:"14px", background:item.bg, border:`1px solid ${item.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.25rem", flexShrink:0 }}>
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.75rem", fontWeight:700, letterSpacing:"0.1em", color:item.color, opacity:0.8 }}>{item.no}</span>
+                  <div style={{ width:"46px", height:"46px", borderRadius:"14px", background:item.bg, border:`1px solid ${item.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.562rem", flexShrink:0 }}>
                     {item.icon}
                   </div>
                 </div>
 
                 <div style={{ paddingTop:"2px" }}>
-                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:item.color, display:"block", marginBottom:"0.35rem" }}>
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.75rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:item.color, display:"block", marginBottom:"0.35rem" }}>
                     Landasan {item.landasan}
                   </span>
-                  <h3 className="serif" style={{ fontWeight:700, fontSize:"1.05rem", color:"#1a1410", marginBottom:"0.4rem", lineHeight:1.3 }}>{item.strategi}</h3>
-                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.8rem", lineHeight:1.7, color:"#7a6a5a" }}>{item.deskripsi}</p>
+                  <h3 className="serif" style={{ fontWeight:700, fontSize:"1.312rem", color:"#1a1410", marginBottom:"0.4rem", lineHeight:1.3 }}>{item.strategi}</h3>
+                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"1.0rem", lineHeight:1.7, color:"#7a6a5a" }}>{item.deskripsi}</p>
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* footer */}
-          <div className="reveal" style={{ marginTop:"3rem", padding:"1.25rem 1.5rem", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"12px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.5rem" }}>
-            <div>
-              <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.8rem", color:"#1a1410" }}>Irenia Maisa Kamila</p>
-              <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", color:"#7a6a5a", letterSpacing:"0.1em" }}>NIM 2506031</p>
-            </div>
-            <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
-              {["Landasan Pendidikan","2025","Infografis"].map(t => (
-                <span key={t} style={{ display:"inline-flex", alignItems:"center", gap:"6px", padding:"4px 12px", background:"rgba(26,20,16,0.05)", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"99px", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.7rem", color:"#7a6a5a" }}>{t}</span>
-              ))}
-            </div>
           </div>
         </div>
       </section>
