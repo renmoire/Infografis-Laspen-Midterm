@@ -1,300 +1,187 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { toPng } from "html-to-image"
 
-// ── EXPORT HELPERS ────────────────────────────────────────────────────────────
-const CAPTURE_FILTER = (node) =>
-  !node.classList?.contains("no-capture") && node.tagName !== "NAV"
+// ── EXPORT HELPERS ─────────────────────────────────────────────────────────
+const FILTER = (n) => !n.classList?.contains("no-capture") && n.tagName !== "NAV"
 
-async function captureElement(el, filename) {
-  const prevOverflow = document.body.style.overflow
-  const prevWidth = document.body.style.minWidth
+async function captureSec(el, name) {
+  const pO = document.body.style.overflow, pM = document.body.style.minWidth
   document.body.style.overflow = "visible"
   document.body.style.minWidth = "1024px"
   try {
-    const dataUrl = await toPng(el, {
-      backgroundColor: "#0a0f1e",
-      pixelRatio: 2,
-      width: 1024,
-      filter: CAPTURE_FILTER,
-    })
-    const a = document.createElement("a")
-    a.href = dataUrl
-    a.download = filename
-    a.click()
-  } finally {
-    document.body.style.overflow = prevOverflow
-    document.body.style.minWidth = prevWidth  
-  }
+    const url = await toPng(el, { backgroundColor: "#faf7f2", pixelRatio: 2, width: 1024, filter: FILTER })
+    Object.assign(document.createElement("a"), { href: url, download: name }).click()
+  } finally { document.body.style.overflow = pO; document.body.style.minWidth = pM }
 }
-
-async function captureFullPage(filename) {
-  const prevOverflow = document.body.style.overflow
+async function captureFull(name) {
+  const pO = document.body.style.overflow
   document.body.style.overflow = "visible"
   try {
-    const dataUrl = await toPng(document.body, {
-      backgroundColor: "#0a0f1e",
-      pixelRatio: 2,
+    const url = await toPng(document.body, {
+      backgroundColor: "#faf7f2", pixelRatio: 2,
       width: document.documentElement.scrollWidth,
-      height: document.documentElement.scrollHeight,
-      filter: CAPTURE_FILTER,
+      height: document.documentElement.scrollHeight, filter: FILTER
     })
-    const a = document.createElement("a")
-    a.href = dataUrl
-    a.download = filename
-    a.click()
-  } finally {
-    document.body.style.overflow = prevOverflow
-  }
+    Object.assign(document.createElement("a"), { href: url, download: name }).click()
+  } finally { document.body.style.overflow = pO }
 }
 
-// ── EXPORT PANEL COMPONENT ────────────────────────────────────────────────────
-function ExportPanel() {
+// ── EXPORT FAB ─────────────────────────────────────────────────────────────
+function ExportFAB() {
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(null)
-
-  const sections = [
-    { id: "analisis", label: "Analisis",           icon: "📊" },
-    { id: "era40",    label: "Peran Landasan Pendidikan",    icon: "⚙️" },
-    { id: "kritik",   label: "Implementasi Pada Pancasila",       icon: "📋" },
-    { id: "strategi", label: "Integrasi Landasan Pendidikan",           icon: "🗺️" },
+  const [busy, setBusy] = useState(null)
+  const items = [
+    { id:"hero",     label:"Cover"    },
+    { id:"analisis", label:"Analisis" },
+    { id:"era40",    label:"Era 4.0"  },
+    { id:"kritik",   label:"Kritik"   },
+    { id:"strategi", label:"Strategi" },
   ]
-
-  const handleFullPage = async () => {
-    setLoading("full")
-    try { await captureFullPage("infografis-pendidikan-full.png") }
-    catch (e) { console.error(e) }
-    setLoading(null)
-  }
-
-  const handleSection = async (id, label) => {
-    setLoading(id)
+  const go = async (id) => {
+    setBusy(id)
     try {
-      const el = document.getElementById(id)
-      if (el) await captureElement(el, `infografis-${id}.png`)
-    } catch (e) { console.error(e) }
-    setLoading(null)
+      if (id === "full") await captureFull("infografis-full.png")
+      else { const el = document.getElementById(id); if (el) await captureSec(el, `infografis-${id}.png`) }
+    } catch(e) { console.error(e) }
+    setBusy(null)
   }
-
   return (
-    <div className="no-capture fixed bottom-6 right-5 z-50 flex flex-col items-end gap-2">
-      {/* Section buttons — shown when open */}
+    <div className="no-capture" style={{ position:"fixed", bottom:"1.5rem", right:"1.25rem", zIndex:50, display:"flex", flexDirection:"column", alignItems:"flex-end", gap:"8px" }}>
       {open && (
-        <div
-          className="flex flex-col gap-1.5 mb-1 items-end"
-          style={{ animation: "slideUp 0.2s ease" }}
-        >
-          {/* Full page */}
-          <button
-            onClick={handleFullPage}
-            disabled={!!loading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide text-white transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50"
-            style={{
-              background: "linear-gradient(135deg, #1d4ed8, #1e40af)",
-              border: "1px solid rgba(99,153,255,0.4)",
-              boxShadow: "0 4px 20px rgba(37,99,235,0.4)",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {loading === "full" ? (
-              <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : "🖼️"}
-            Seluruh Halaman
+        <div style={{ display:"flex", flexDirection:"column", gap:"6px", alignItems:"flex-end" }}>
+          <button onClick={() => go("full")} disabled={!!busy}
+            style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.1em", textTransform:"uppercase", padding:"8px 18px", background:"#c0622a", color:"#faf7f2", border:"none", borderRadius:"99px", cursor:"pointer", whiteSpace:"nowrap", opacity: busy ? 0.5 : 1 }}>
+            {busy==="full" ? "···" : "↓ Full Page"}
           </button>
-
-          <div className="w-full h-px bg-white/10 my-0.5" />
-
-          {sections.map(({ id, label, icon }) => (
-            <button
-              key={id}
-              onClick={() => handleSection(id, label)}
-              disabled={!!loading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide text-white/80 transition-all duration-200 hover:text-white hover:scale-105 active:scale-95 disabled:opacity-50"
-              style={{
-                background: "rgba(10,15,30,0.85)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                backdropFilter: "blur(12px)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {loading === id ? (
-                <span className="inline-block w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : icon}
-              {label}
+          <div style={{ width:"100%", height:"1px", background:"rgba(26,20,16,0.09)" }} />
+          {items.map(({ id, label }) => (
+            <button key={id} onClick={() => go(id)} disabled={!!busy}
+              style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:600, letterSpacing:"0.1em", textTransform:"uppercase", padding:"8px 18px", background:"#ede8db", color: busy===id ? "#c0622a" : "rgba(255,255,255,0.6)", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"99px", cursor:"pointer", whiteSpace:"nowrap", opacity: busy&&busy!==id ? 0.4 : 1 }}>
+              {busy===id ? "···" : `↓ ${label}`}
             </button>
           ))}
         </div>
       )}
-
-      {/* FAB toggle button */}
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
-        style={{
-          background: open
-            ? "rgba(30,40,80,0.95)"
-            : "linear-gradient(135deg, #2563eb, #1e40af)",
-          border: "1px solid rgba(99,153,255,0.5)",
-          boxShadow: open
-            ? "0 4px 20px rgba(0,0,0,0.4)"
-            : "0 4px 24px rgba(37,99,235,0.5)",
-          transform: open ? "rotate(45deg)" : "none",
-        }}
-        title="Export sebagai PNG"
-      >
-        {open ? "✕" : "⬇"}
+      <button onClick={() => setOpen(v => !v)}
+        style={{ width:"44px", height:"44px", borderRadius:"50%", background: open ? "rgba(26,20,16,0.09)" : "#c0622a", color: open ? "#fff" : "#faf7f2", border:"1px solid rgba(255,255,255,0.15)", cursor:"pointer", fontSize:"1.1rem", fontWeight:700, display:"flex", alignItems:"center", justifyContent:"center", transition:"all 0.3s ease" }}>
+        {open ? "✕" : "↓"}
       </button>
-
-      <style>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }
 
-// ── MAIN APP ──────────────────────────────────────────────────────────────────
-function App() {
+// ── MAIN ───────────────────────────────────────────────────────────────────
+export default function App() {
   const [scrolled, setScrolled] = useState(false)
-  const [activeSection, setActiveSection] = useState("hero")
+  const [active, setActive]     = useState("hero")
   const [menuOpen, setMenuOpen] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const lastClick               = useRef(null)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20)
-    window.addEventListener("scroll", onScroll)
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [])
-
-  useEffect(() => {
-    const sections = ["hero", "analisis", "era40", "kritik", "strategi"]
-    const observers = sections.map((id) => {
-      const el = document.getElementById(id)
-      if (!el) return null
-      const obs = new IntersectionObserver(
-        ([entry]) => { if (entry.isIntersecting) setActiveSection(id) },
-        { threshold: 0.35 }
-      )
-      obs.observe(el)
-      return obs
-    })
-    return () => observers.forEach((o) => o?.disconnect())
-  }, [])
-
-  useEffect(() => {
-    const onScroll = () => { if (menuOpen) setMenuOpen(false) }
-    window.addEventListener("scroll", onScroll)
-    return () => window.removeEventListener("scroll", onScroll)
+    const fn = () => {
+      setScrolled(window.scrollY > 30)
+      if (menuOpen) setMenuOpen(false)
+      const tot = document.documentElement.scrollHeight - window.innerHeight
+      setProgress(tot > 0 ? (window.scrollY / tot) * 100 : 0)
+    }
+    window.addEventListener("scroll", fn)
+    return () => window.removeEventListener("scroll", fn)
   }, [menuOpen])
 
+  useEffect(() => {
+    const ids = ["hero","analisis","era40","kritik","strategi"]
+    const obs = ids.map(id => {
+      const el = document.getElementById(id)
+      if (!el) return null
+      const o = new IntersectionObserver(([e]) => { if (e.isIntersecting) setActive(id) }, { threshold: 0.25 })
+      o.observe(el); return o
+    })
+    return () => obs.forEach(o => o?.disconnect())
+  }, [])
+
+  useEffect(() => {
+    const o = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { e.target.classList.add("in"); o.unobserve(e.target) }
+      })
+    }, { threshold: 0, rootMargin: "0px 0px -40px 0px" })
+    const els = document.querySelectorAll(".reveal, .reveal-left")
+    els.forEach(el => {
+      const rect = el.getBoundingClientRect()
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        el.classList.add("in")
+      } else {
+        o.observe(el)
+      }
+    })
+    return () => o.disconnect()
+  }, [])
+
   const navLinks = [
-    { id: "analisis", label: "Analisis" },
-    { id: "era40",    label: "Peran" },
-    { id: "kritik",   label: "Kritik" },
-    { id: "strategi", label: "Strategi" },
+    { id:"analisis", label:"Analisis" },
+    { id:"era40",    label:"Era 4.0"  },
+    { id:"kritik",   label:"Kritik"   },
+    { id:"strategi", label:"Strategi" },
   ]
 
-  const scrollTo = (id) => {
+  const go = (id) => {
+    if (lastClick.current === id) {
+      window.scrollTo({ top: 0, behavior:"smooth" })
+      lastClick.current = null; setMenuOpen(false); return
+    }
+    lastClick.current = id
     const el = document.getElementById(id)
     if (!el) return
-    const offset = 80
-    const top = el.getBoundingClientRect().top + window.scrollY - offset
-    window.scrollTo({ top, behavior: "smooth" })
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 72, behavior:"smooth" })
     setMenuOpen(false)
   }
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("fade-up")
-            observer.unobserve(entry.target)
-          }
-        })
-      },
-      { threshold: 0.15 }
-    )
-    document.querySelectorAll(".reveal").forEach((el) => observer.observe(el))
-    return () => observer.disconnect()
-  }, [])
-
   return (
-    <div className="min-h-screen bg-[#0a0f1e] font-sans text-[#111]">
+    <div style={{ minHeight:"100vh", background:"#faf7f2" }}>
 
-      {/* ── EXPORT PANEL (floating) ── */}
-      <ExportPanel />
+      {/* progress bar — solid, no gradient */}
+      <div style={{ position:"fixed", top:0, left:0, height:"2px", width:`${progress}%`, background:"#c0622a", zIndex:9999, transition:"width 0.1s linear" }} />
 
-      {/* ── NAVBAR ── */}
-      <nav
-        className="no-capture fixed top-0 left-0 right-0 z-50 transition-all duration-500"
-        style={{
-          background: scrolled || menuOpen ? "rgba(10, 15, 30, 0.92)" : "transparent",
-          backdropFilter: scrolled || menuOpen ? "blur(18px)" : "none",
-          WebkitBackdropFilter: scrolled || menuOpen ? "blur(18px)" : "none",
-          borderBottom: scrolled || menuOpen ? "1px solid rgba(255,255,255,0.07)" : "1px solid transparent",
-          boxShadow: scrolled || menuOpen ? "0 4px 30px rgba(0,0,0,0.25)" : "none",
-        }}
-      >
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <button
-            onClick={() => scrollTo("hero")}
-            className="text-white font-black text-sm tracking-wide hover:text-blue-300 transition-colors duration-300"
-          >
-            Irenia Maisa Kamila<span className="text-blue-400"> (2506031)</span>.
+      <ExportFAB />
+
+      {/* ── NAV ── */}
+      <nav className="no-capture" style={{
+        position:"fixed", top:0, left:0, right:0, zIndex:40,
+        background: scrolled||menuOpen ? "rgba(250,247,242,0.92)" : "transparent",
+        backdropFilter: scrolled||menuOpen ? "blur(20px)" : "none",
+        borderBottom: scrolled||menuOpen ? "1px solid rgba(26,20,16,0.08)" : "1px solid transparent",
+        transition:"all 0.4s ease",
+      }}>
+        <div style={{ maxWidth:"900px", margin:"0 auto", padding:"0 1.5rem", height:"64px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <button onClick={() => go("hero")} style={{ background:"none", border:"none", cursor:"pointer", textAlign:"left" }}>
+            <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:800, fontSize:"0.85rem", color:"#1a1410", lineHeight:1.2 }}>Irenia Maisa Kamila</div>
+            <div style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:600, letterSpacing:"0.14em", color:"#c0622a", textTransform:"uppercase" }}>2506031</div>
           </button>
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hide-mobile" style={{ display:"flex", gap:"4px" }}>
             {navLinks.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => scrollTo(id)}
-                className="relative px-3 py-1.5 text-xs font-semibold tracking-wide rounded-full transition-all duration-300 hover:text-white hover:bg-white/10"
-                style={{
-                  color: activeSection === id ? "#fff" : "rgba(255,255,255,0.45)",
-                  background: activeSection === id ? "rgba(37,99,255,0.22)" : "transparent",
-                  border: activeSection === id ? "1px solid rgba(99,153,255,0.35)" : "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                {label}
-              </button>
+              <button key={id} onClick={() => go(id)} className={`nav-pill${active===id?" active":""}`}>{label}</button>
             ))}
           </div>
 
-          {/* Hamburger — mobile only */}
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            className="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-1.5 rounded-lg transition-all duration-300 hover:bg-white/10"
-            aria-label="Toggle menu"
-          >
-            <span className="block w-5 h-0.5 bg-white transition-all duration-300 origin-center"
-              style={{ transform: menuOpen ? "translateY(8px) rotate(45deg)" : "none" }} />
-            <span className="block w-5 h-0.5 bg-white transition-all duration-300"
-              style={{ opacity: menuOpen ? 0 : 1, transform: menuOpen ? "scaleX(0)" : "none" }} />
-            <span className="block w-5 h-0.5 bg-white transition-all duration-300 origin-center"
-              style={{ transform: menuOpen ? "translateY(-8px) rotate(-45deg)" : "none" }} />
+          <button onClick={() => setMenuOpen(v=>!v)} id="burger-btn"
+            style={{ display:"none", background:"none", border:"none", cursor:"pointer", flexDirection:"column", gap:"5px", padding:"4px" }}>
+            {[0,1,2].map(i => (
+              <span key={i} style={{
+                display:"block", width:"20px", height:"1.5px", background:"#1a1410", transition:"all 0.3s ease",
+                transform: menuOpen ? (i===0 ? "translateY(6.5px) rotate(45deg)" : i===2 ? "translateY(-6.5px) rotate(-45deg)" : "none") : "none",
+                opacity: menuOpen && i===1 ? 0 : 1,
+              }} />
+            ))}
           </button>
         </div>
 
-        {/* Mobile dropdown */}
-        <div
-          className="md:hidden overflow-hidden transition-all duration-300 ease-in-out"
-          style={{ maxHeight: menuOpen ? "260px" : "0px", opacity: menuOpen ? 1 : 0 }}
-        >
-          <div className="px-6 pb-4 flex flex-col gap-2">
+        <div style={{ maxHeight: menuOpen ? "280px" : "0", overflow:"hidden", transition:"max-height 0.35s ease, opacity 0.3s", opacity: menuOpen ? 1 : 0, borderTop: menuOpen ? "1px solid rgba(26,20,16,0.08)" : "none" }}>
+          <div style={{ maxWidth:"900px", margin:"0 auto", padding:"1rem 1.5rem", display:"flex", flexDirection:"column", gap:"4px" }}>
             {navLinks.map(({ id, label }) => (
-              <button
-                key={id}
-                onClick={() => scrollTo(id)}
-                className="w-full text-left px-4 py-3 text-sm font-semibold tracking-wide rounded-xl transition-all duration-200"
-                style={{
-                  color: activeSection === id ? "#fff" : "rgba(255,255,255,0.55)",
-                  background: activeSection === id ? "rgba(37,99,255,0.22)" : "rgba(255,255,255,0.04)",
-                  border: activeSection === id ? "1px solid rgba(99,153,255,0.35)" : "1px solid rgba(255,255,255,0.07)",
-                }}
-              >
+              <button key={id} onClick={() => go(id)}
+                style={{ background: active===id ? "rgba(192,98,42,0.1)" : "transparent", border:"none", borderRadius:"10px", cursor:"pointer", padding:"0.75rem 1rem", textAlign:"left", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.85rem", fontWeight:600, color: active===id ? "#c0622a" : "#7a6a5a" }}>
                 {label}
               </button>
             ))}
@@ -302,162 +189,321 @@ function App() {
         </div>
       </nav>
 
-      {/* ── ANIMATED BACKGROUND ── */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        {[...Array(30)].map((_, i) => (
-          <div key={i} className="twinkle absolute bg-white rounded-full"
-            style={{
-              width: `${Math.random() * 3 + 1}px`,
-              height: `${Math.random() * 3 + 1}px`,
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              opacity: 0.6,
-            }}
-          />
-        ))}
-        <div className="float absolute" style={{ top: "10%", right: "8%" }}>
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-700 opacity-80 shadow-lg shadow-blue-400/40">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-36 h-6 border-2 border-blue-300/50 rounded-full spin-slow" />
-          </div>
-        </div>
-        <div className="float-slow absolute" style={{ top: "60%", right: "15%" }}>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 opacity-60" />
-        </div>
-        <div className="float-slower absolute" style={{ top: "30%", left: "5%" }}>
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-200 to-blue-500 opacity-50" />
-        </div>
-        <div className="drift absolute" style={{ top: "75%", left: "10%" }}>
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-300 to-indigo-500 opacity-70" />
-        </div>
-        <div className="float absolute text-5xl opacity-20" style={{ top: "20%", left: "15%", animationDelay: "1.5s" }}>📖</div>
-        <div className="twinkle-slow absolute text-4xl opacity-20" style={{ top: "50%", left: "3%" }}>✦</div>
-        <div className="twinkle absolute text-xl opacity-20" style={{ top: "85%", right: "5%" }}>✦</div>
-      </div>
+      <style>{`
+        @media (max-width: 640px) {
+          #burger-btn { display: flex !important; }
+          .hide-mobile { display: none !important; }
+          .two-col { grid-template-columns: 1fr !important; }
+          .three-col { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
-      {/* ── HERO ── */}
-      <section id="hero" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 pt-24 pb-16">
-        <span className="text-xs font-semibold tracking-widest uppercase text-blue-300 border border-blue-800 rounded-full px-3 py-1">
-          Landasan Pendidikan
-        </span>
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-black mt-6 leading-tight text-white">
-          Pendidikan sebagai<br />
-          <span className="text-blue-400">Gerakan Semesta</span>
-        </h1>
-        <p className="text-blue-200 mt-3 tracking-wide uppercase font-medium text-sm">
-          di Era Society 5.0
-        </p>
-        <div className="reveal mt-8 rounded-xl p-6 glass-card">
-          <p className="text-white/70 text-base leading-relaxed">
-            Pendidikan bukan hanya proses belajar, tetapi fondasi pembentukan karakter, moral, dan kesiapan generasi menghadapi perubahan global.
+      {/* ══════════════════════════════════════
+          HERO
+      ══════════════════════════════════════ */}
+      <section id="hero" style={{ position:"relative", minHeight:"100svh", display:"flex", flexDirection:"column", justifyContent:"center", overflow:"hidden", background:"#faf7f2" }}>
+
+        {/* dot grid — flat, no gradient */}
+        <div style={{ position:"absolute", inset:0, backgroundImage:"radial-gradient(rgba(26,20,16,0.06) 1px, transparent 1px)", backgroundSize:"28px 28px", pointerEvents:"none" }} />
+
+        {/* corner accent blocks */}
+        <div style={{ position:"absolute", top:0, right:0, width:"280px", height:"280px", background:"#c0622a", opacity:0.06, clipPath:"polygon(100% 0, 0 0, 100% 100%)" }} />
+        <div style={{ position:"absolute", bottom:0, left:0, width:"200px", height:"200px", background:"#5a8a5e", opacity:0.06, clipPath:"polygon(0 100%, 0 0, 100% 100%)" }} />
+
+        <div style={{ maxWidth:"900px", margin:"0 auto", padding:"7rem 1.5rem 5rem", position:"relative", zIndex:1 }}>
+
+          {/* badge */}
+          <div className="reveal" style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"5px 14px", borderRadius:"99px", border:"1px solid rgba(192,98,42,0.3)", background:"rgba(192,98,42,0.08)", marginBottom:"2rem" }}>
+            <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#5a8a5e", flexShrink:0 }} />
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#5a8a5e" }}>Landasan Pendidikan · 2025</span>
+          </div>
+
+          {/* headline — solid colors, no gradient text */}
+          <h1 className="reveal serif" style={{ fontSize:"clamp(3rem,9vw,6.5rem)", fontWeight:900, lineHeight:0.95, letterSpacing:"-0.03em", color:"#1a1410", marginBottom:"1.5rem" }}>
+            Pendidikan<br />
+            <span style={{ fontStyle:"italic", color:"#c0622a" }}>sebagai</span><br />
+            Gerakan<br />
+            <span style={{ fontStyle:"italic", color:"#b84a2e" }}>Semesta</span>
+          </h1>
+
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.75rem", fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:"#7a6a5a", marginBottom:"2.5rem" }}>
+            di Era Society 5.0 &nbsp;·&nbsp; Infografis Pendidikan
           </p>
-        </div>
-      </section>
 
-      {/* ── SECTION 2 — ANALISIS KRITIS ── */}
-      <section id="analisis" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
-        <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Analisis
-        </span>
-        <h2 className="text-white font-black text-xl mt-4 mb-6">Dampak Perkembangan Teknologi</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="reveal card-hover glass-card-dark rounded-xl p-6">
-            <span className="text-xs font-bold tracking-widest uppercase text-green-600 bg-green-950/50 px-3 py-1 rounded-full">Positif</span>
-            <ul className="mt-4 space-y-3 text-white/70 text-sm">
-              <li className="flex gap-2"><span className="text-green-500 font-bold">✔</span> Akses informasi lebih cepat</li>
-              <li className="flex gap-2"><span className="text-green-500 font-bold">✔</span> Pembelajaran digital semakin luas</li>
-              <li className="flex gap-2"><span className="text-green-500 font-bold">✔</span> Teknologi mendukung inovasi pendidikan</li>
-            </ul>
-          </div>
-          <div className="reveal card-hover glass-card-dark rounded-xl p-6">
-            <span className="text-xs font-bold tracking-widest uppercase text-[#FFFFFF]/70 bg-[#FFFFFF]/19 px-3 py-1 rounded-full">Negatif</span>
-            <ul className="mt-4 space-y-3 text-white/70 text-sm">
-              <li className="flex gap-2"><span className="text-red-400 font-bold">✖</span> Menurunnya interaksi sosial</li>
-              <li className="flex gap-2"><span className="text-red-400 font-bold">✖</span> Lunturnya nilai budaya dan moral</li>
-              <li className="flex gap-2"><span className="text-red-400 font-bold">✖</span> Ketergantungan terhadap teknologi</li>
-            </ul>
+          {/* <div className="reveal" style={{ maxWidth:"560px", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"16px", padding:"1.5rem" }}>
+            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.9rem", lineHeight:1.7, color:"rgba(26,20,16,0.6)" }}>
+              Pendidikan bukan hanya proses belajar — ia adalah fondasi pembentukan karakter, moral, dan kesiapan generasi menghadapi perubahan global yang semakin kompleks.
+            </p>
+          </div> */}
+
+          <div className="reveal" style={{ marginTop:"3rem", display:"flex", alignItems:"center", gap:"12px" }}>
+            <div style={{ width:"1px", height:"48px", background:"#c0622a", opacity:0.4 }} />
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:600, letterSpacing:"0.18em", textTransform:"uppercase", color:"#7a6a5a" }}>Scroll untuk eksplorasi</span>
           </div>
         </div>
       </section>
 
-      {/* ── SECTION 3 — ERA 4.0 & VUCA ── */}
-      <section id="era40" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
-        <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Peran Landasan Pendidikan
-        </span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-          {[
-            { icon: "⚙️", title: "Revolusi Industri 4.0", body: "Teknologi digital mengubah cara manusia belajar, bekerja, dan berkomunikasi.", blue: true },
-            { icon: "🌐", title: "Society 5.0", body: "Teknologi harus digunakan untuk meningkatkan kualitas hidup manusia, bukan menggantikan nilai kemanusiaan.", blue: false },
-            { icon: "🌪️", title: "Era VUCA", body: "Pendidikan harus mampu menghadapi perubahan yang cepat, kompleks, dan penuh ketidakpastian.", blue: true },
-          ].map((card, i) => (
-            <div key={i} className={`reveal card-hover rounded-xl p-6 ${card.blue ? "glass-card-blue text-white" : "glass-card-light text-[#111]"}`}
-              style={{ animationDelay: `${i * 0.15}s` }}>
-              <span className="text-3xl">{card.icon}</span>
-              <h3 className="font-black text-lg mt-3">{card.title}</h3>
-              <p className={`text-sm mt-2 leading-relaxed ${card.blue ? "text-blue-100" : "text-[#666]"}`}>{card.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div style={{ height:"1px", background:"rgba(26,20,16,0.07)", maxWidth:"900px", margin:"0 auto" }} />
 
-      {/* ── SECTION 4 — KRITIK PANCASILA ── */}
-      <section id="kritik" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10">
-        <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Implementasi pada Pancasila
-        </span>
-        <h2 className="text-white font-black text-xl mt-4 mb-2">Evaluasi Implementasi Nilai Pancasila</h2>
-        <p className="text-white/50 text-sm mb-6">Dalam Praktik Pendidikan Indonesia</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { sila: "Sila 1", label: "Ketuhanan", kritik: "Pendidikan agama cenderung ritualistik, belum sepenuhnya membentuk akhlak dan toleransi antar umat beragama." },
-            { sila: "Sila 2", label: "Kemanusiaan", kritik: "Bullying dan kekerasan di sekolah masih marak, menandakan lemahnya internalisasi nilai kemanusiaan." },
-            { sila: "Sila 3", label: "Persatuan", kritik: "Kesenjangan kualitas pendidikan antara daerah 3T dan kota besar mencerminkan belum terwujudnya persatuan dalam akses pendidikan." },
-            { sila: "Sila 4 & 5", label: "Kerakyatan & Keadilan", kritik: "Kebijakan pendidikan sering top-down tanpa melibatkan komunitas lokal. Akses internet dan perangkat digital masih timpang." },
-          ].map((item, i) => (
-            <div key={i} className="reveal card-hover glass-card rounded-xl p-6" style={{ animationDelay: `${i * 0.1}s` }}>
-              <span className="text-sm font-bold text-blue-400 uppercase tracking-widest">{item.sila}</span>
-              <p className="text-white font-black text-lg mt-2">{item.label}</p>
-              <p className="text-white/70 text-medium leading-relaxed">{item.kritik}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* ══════════════════════════════════════
+          ANALISIS
+      ══════════════════════════════════════ */}
+      <section id="analisis" style={{ position:"relative", padding:"5rem 0", background:"#faf7f2" }}>
 
-      {/* ── SECTION 5 — STRATEGI ── */}
-      <section id="strategi" className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 py-10 pb-28">
-        <span className="text-xs font-semibold tracking-widest uppercase text-white/40 border border-white/10 rounded-full px-3 py-1">
-          Integrasi Landasan Pendidikan
-        </span>
-        <h2 className="text-white font-black text-xl mt-4 mb-2">Strategi Integrasi Landasan Pendidikan</h2>
-        <p className="text-white/50 text-sm mb-6">Dalam Menghadapi Era VUCA & Membentuk Generasi Unggul</p>
-        <div className="space-y-3">
-          {[
-            { no: "01", warna: "from-blue-600 to-blue-800",    landasan: "Filosofis",   icon: "💡", strategi: "Menanamkan Pancasila sebagai falsafah hidup",              deskripsi: "Pendidikan harus berakar pada nilai-nilai Pancasila sebagai panduan berpikir dan bertindak, bukan sekadar hafalan." },
-            { no: "02", warna: "from-indigo-600 to-indigo-800", landasan: "Historis",    icon: "📜", strategi: "Belajar dari perjalanan pendidikan bangsa",                deskripsi: "Mengintegrasikan sejarah perjuangan pendidikan Indonesia agar siswa memahami akar dan identitas bangsa." },
-            { no: "03", warna: "from-violet-600 to-violet-800", landasan: "Sosiologis",  icon: "🏘️", strategi: "Pendidikan berbasis komunitas dan gotong royong",           deskripsi: "Melibatkan keluarga, masyarakat, dan lembaga sosial dalam proses pendidikan sebagai ekosistem belajar." },
-            { no: "04", warna: "from-purple-600 to-purple-800", landasan: "Antropologis",icon: "🌿", strategi: "Pendidikan berbasis kearifan lokal dan budaya",             deskripsi: "Mengakui keberagaman budaya Nusantara sebagai kekuatan, bukan hambatan, dalam membangun karakter bangsa." },
-            { no: "05", warna: "from-blue-700 to-cyan-700",     landasan: "Psikologis",  icon: "🧠", strategi: "Pendekatan pembelajaran berpusat pada peserta didik",      deskripsi: "Memahami tahap perkembangan, gaya belajar, dan kebutuhan emosional siswa untuk menciptakan pembelajaran yang bermakna." },
-          ].map((item, i) => (
-            <div key={i} className="reveal card-hover flex gap-4 glass-card rounded-xl p-5 overflow-hidden relative" style={{ animationDelay: `${i * 0.1}s` }}>
-              <div className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${item.warna} flex items-center justify-center text-xl`}>
-                {item.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="text-[15px] font-black text-white/30 tracking-widest">{item.no}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-blue-300 bg-blue-900/20 px-2 py-0.5 rounded-full">Landasan {item.landasan}</span>
+        {/* side accent stripe */}
+        <div style={{ position:"absolute", top:0, right:0, width:"3px", height:"100%", background:"#c0622a", opacity:0.15 }} />
+
+        <div style={{ maxWidth:"900px", margin:"0 auto", padding:"0 1.5rem" }}>
+
+          <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
+            <div style={{ width:"24px", height:"2px", background:"#c0622a" }} />
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Analisis</span>
+          </div>
+
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
+            Dampak Perkembangan<br /><span style={{ color:"#c0622a" }}>Teknologi</span>
+          </h2>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>Dalam Dunia Pendidikan Indonesia</p>
+
+          {/* pos/neg split — flat solid */}
+          <div className="reveal two-col" style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:"1px", background:"rgba(26,20,16,0.07)", borderRadius:"20px", overflow:"hidden" }}>
+
+            {/* POSITIF */}
+            <div style={{ background:"#ede8db", padding:"2rem" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.75rem" }}>
+                <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"4px 12px", borderRadius:"99px", background:"rgba(90,138,94,0.1)", border:"1px solid rgba(90,138,94,0.25)" }}>
+                  <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#5a8a5e" }} />
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"#5a8a5e" }}>Positif</span>
                 </div>
-                <p className="text-white font-black text-medium">{item.strategi}</p>
-                <p className="text-white/55 text-medium mt-1 leading-relaxed">{item.deskripsi}</p>
+                <span className="serif" style={{ fontSize:"4rem", fontWeight:900, color:"rgba(90,138,94,0.07)", lineHeight:1 }}>+</span>
               </div>
+              {[
+                { h:"Akses Informasi",      b:"Informasi tersedia lebih cepat dan melampaui batas geografis." },
+                { h:"Pembelajaran Digital", b:"Platform e-learning memperluas jangkauan pendidikan formal." },
+                { h:"Inovasi Pedagogis",    b:"Teknologi mendorong metode pengajaran adaptif dan kreatif." },
+              ].map((item, i) => (
+                <div key={i} style={{ display:"flex", gap:"12px", marginBottom: i<2?"1.25rem":"0", paddingBottom: i<2?"1.25rem":"0", borderBottom: i<2?"1px solid rgba(26,20,16,0.06)":"none" }}>
+                  <div style={{ width:"3px", borderRadius:"99px", background:"#5a8a5e", flexShrink:0, alignSelf:"stretch", minHeight:"36px" }} />
+                  <div>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.85rem", color:"#1a1410", marginBottom:"3px" }}>{item.h}</p>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.78rem", color:"#7a6a5a", lineHeight:1.55 }}>{item.b}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+
+            {/* NEGATIF */}
+            <div style={{ background:"#e8e0d0", padding:"2rem" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.75rem" }}>
+                <div style={{ display:"inline-flex", alignItems:"center", gap:"8px", padding:"4px 12px", borderRadius:"99px", background:"rgba(184,74,46,0.1)", border:"1px solid rgba(184,74,46,0.25)" }}>
+                  <span style={{ width:"6px", height:"6px", borderRadius:"50%", background:"#b84a2e" }} />
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:"#b84a2e" }}>Negatif</span>
+                </div>
+                <span className="serif" style={{ fontSize:"4rem", fontWeight:900, color:"rgba(184,74,46,0.07)", lineHeight:1 }}>−</span>
+              </div>
+              {[
+                { h:"Degradasi Sosial", b:"Menurunnya kualitas interaksi tatap muka dan empati interpersonal." },
+                { h:"Erosi Budaya",     b:"Nilai-nilai lokal tergerus dominasi konten digital global." },
+                { h:"Ketergantungan",   b:"Siswa kehilangan kemampuan berpikir mandiri tanpa teknologi." },
+              ].map((item, i) => (
+                <div key={i} style={{ display:"flex", gap:"12px", marginBottom: i<2?"1.25rem":"0", paddingBottom: i<2?"1.25rem":"0", borderBottom: i<2?"1px solid rgba(26,20,16,0.06)":"none" }}>
+                  <div style={{ width:"3px", borderRadius:"99px", background:"#b84a2e", flexShrink:0, alignSelf:"stretch", minHeight:"36px" }} />
+                  <div>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.85rem", color:"#1a1410", marginBottom:"3px" }}>{item.h}</p>
+                    <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.78rem", color:"#7a6a5a", lineHeight:1.55 }}>{item.b}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* quote */}
+          {/* <div className="reveal" style={{ marginTop:"2.5rem", padding:"2rem 2rem 2rem 2.5rem", borderLeft:"3px solid #c0622a", background:"rgba(192,98,42,0.05)", borderRadius:"0 12px 12px 0" }}>
+            <p className="serif" style={{ fontSize:"clamp(1rem,2.5vw,1.3rem)", fontWeight:700, fontStyle:"italic", color:"#1a1410", lineHeight:1.5 }}>
+              "Teknologi adalah alat — karakter manusia yang menentukan arahnya."
+            </p>
+            <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.7rem", color:"#7a6a5a", marginTop:"0.75rem", letterSpacing:"0.1em", textTransform:"uppercase" }}>Refleksi Landasan Pendidikan</p>
+          </div> */}
+        </div>
+      </section>
+
+      <div style={{ height:"1px", background:"rgba(26,20,16,0.07)", maxWidth:"900px", margin:"0 auto" }} />
+
+      {/* ══════════════════════════════════════
+          ERA 4.0
+      ══════════════════════════════════════ */}
+      <section id="era40" style={{ position:"relative", padding:"5rem 0", background:"#f5f0e8" }}>
+
+        <div style={{ position:"absolute", top:0, left:0, width:"3px", height:"100%", background:"#8b6b3d", opacity:0.2 }} />
+
+        <div style={{ maxWidth:"900px", margin:"0 auto", padding:"0 1.5rem" }}>
+
+          <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
+            <div style={{ width:"24px", height:"2px", background:"#8b6b3d" }} />
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Peran Landasan Pendidikan</span>
+          </div>
+
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"3rem", color:"#1a1410" }}>
+            Revolusi 4.0,{" "}<span style={{ color:"#c0622a" }}>Society 5.0</span>
+            <br />&amp; Era <span style={{ fontStyle:"italic" }}>VUCA</span>
+          </h2>
+
+          <div style={{ display:"flex", flexDirection:"column" }}>
+            {[
+              { icon:"⚙️", color:"#c0622a",  bg:"rgba(192,98,42,0.1)",  label:"Revolusi Industri 4.0", tag:"Teknologi & Industri", body:"Revolusi Industri 4.0 ditandai dengan perkembangan teknologi digital seperti AI, IoT, dan big data yang mengubah cara manusia belajar, bekerja, dan berkomunikasi. Pendidikan dituntut untuk menghasilkan lulusan yang adaptif, kreatif, dan mampu mengikuti perkembangan teknologi." },
+              { icon:"🌐", color:"#5a8a5e",  bg:"rgba(90,138,94,0.1)",  label:"Society 5.0",           tag:"Humanisasi Teknologi",  body:"Society 5.0 merupakan konsep yang menempatkan manusia sebagai pusat kemajuan teknologi. Pendidikan harus memastikan bahwa teknologi digunakan untuk meningkatkan kualitas hidup tanpa menghilangkan nilai kemanusiaan." },
+              { icon:"🌪️", color:"#b84a2e",  bg:"rgba(184,74,46,0.1)",   label:"Era VUCA",              tag:"Ketidakpastian Global", body:"Era VUCA menggambarkan kondisi dunia yang penuh perubahan, ketidakpastian, kompleksitas, dan ambiguitas. Oleh karena itu, pendidikan dengan landasan yang kuat sangat penting agar mampu menghadapi tantangan masa depan." },
+            ].map((item, i) => (
+              <div key={i} className="reveal" style={{ display:"grid", gridTemplateColumns:"72px 1fr", gap:"1.5rem", padding:"2rem 0", borderBottom: i<2 ? "1px solid rgba(26,20,16,0.07)" : "none", alignItems:"start" }}>
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"8px" }}>
+                  <div style={{ width:"48px", height:"48px", borderRadius:"14px", background:item.bg, border:`1px solid ${item.color}`, borderWidth:"1px", borderStyle:"solid", borderColor:`${item.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.4rem" }}>
+                    {item.icon}
+                  </div>
+                  <span className="serif" style={{ fontSize:"2.5rem", fontWeight:900, color:"rgba(26,20,16,0.05)", lineHeight:1 }}>{String(i+1).padStart(2,"0")}</span>
+                </div>
+                <div style={{ paddingTop:"4px" }}>
+                  <span style={{ display:"inline-block", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:item.color, background:`${item.color}18`, padding:"3px 10px", borderRadius:"99px", marginBottom:"0.6rem" }}>{item.tag}</span>
+                  <h3 className="serif" style={{ fontWeight:700, fontSize:"1.2rem", color:"#1a1410", marginBottom:"0.5rem" }}>{item.label}</h3>
+                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.83rem", lineHeight:1.7, color:"#7a6a5a" }}>{item.body}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div style={{ height:"1px", background:"rgba(26,20,16,0.07)", maxWidth:"900px", margin:"0 auto" }} />
+
+      {/* ══════════════════════════════════════
+          KRITIK PANCASILA
+      ══════════════════════════════════════ */}
+      <section id="kritik" style={{ position:"relative", padding:"5rem 0", background:"#faf7f2" }}>
+
+        <div style={{ position:"absolute", top:0, right:0, width:"3px", height:"100%", background:"#b84a2e", opacity:0.2 }} />
+
+        <div style={{ maxWidth:"900px", margin:"0 auto", padding:"0 1.5rem" }}>
+
+          <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
+            <div style={{ width:"24px", height:"2px", background:"#b84a2e" }} />
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Evaluasi</span>
+          </div>
+
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
+            Implementasi Nilai <span style={{ fontStyle:"italic", color:"#b84a2e" }}>Pancasila</span>
+          </h2>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>dalam Praktik Pendidikan Indonesia</p>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:"2rem" }}>
+  {[
+    {
+      sila:"Sila 1", label:"Ketuhanan", color:"#c0622a", bg:"rgba(192,98,42,0.07)", n:"1",
+      paragraf:`Sila Ketuhanan Yang Maha Esa menuntut pendidikan yang tidak hanya mengajarkan ritual keagamaan, tetapi juga membentuk karakter toleran dan berakhlak mulia. Faktanya, pendidikan agama di banyak sekolah masih berfokus pada aspek kognitif dan hafalan — siswa tahu nama-nama ibadah, namun belum tentu menghayati nilai di baliknya. Akibatnya, intoleransi antarumat beragama masih kerap muncul di lingkungan sekolah. Pendidikan perlu bergeser dari sekadar "mengajarkan agama" menjadi "membentuk manusia beragama" yang benar-benar hidup berdampingan secara damai.`
+    },
+    {
+      sila:"Sila 2", label:"Kemanusiaan", color:"#b84a2e", bg:"rgba(184,74,46,0.07)", n:"2",
+      paragraf:`Sila Kemanusiaan yang Adil dan Beradab menghendaki pendidikan yang memanusiakan manusia. Namun realitas di lapangan memperlihatkan masih maraknya perundungan, kekerasan fisik, dan diskriminasi di lingkungan sekolah. Ini bukan semata masalah individu, melainkan cerminan sistem pendidikan yang belum sepenuhnya menanamkan empati dan penghargaan terhadap sesama. Kurikulum yang terlalu berorientasi pada nilai akademik seringkali mengorbankan pendidikan karakter. Internalisasi nilai kemanusiaan harus dimulai dari cara guru memperlakukan siswa, dari budaya sekolah yang diciptakan, bukan sekadar materi pelajaran di kelas.`
+    },
+    {
+      sila:"Sila 3", label:"Persatuan", color:"#5a8a5e", bg:"rgba(90,138,94,0.07)", n:"3",
+      paragraf:`Indonesia memiliki ribuan pulau dan ratusan suku bangsa, namun sistem pendidikan belum sepenuhnya mampu menerjemahkan keberagaman itu menjadi kekuatan persatuan. Kesenjangan mutu antara sekolah di kota besar dan daerah 3T masih sangat tajam — guru berkualitas, fasilitas memadai, dan akses internet yang stabil masih menjadi kemewahan di banyak pelosok negeri. Kondisi ini secara tidak langsung menciptakan kesenjangan generasi: anak-anak di kota siap bersaing global, sementara anak-anak di daerah terpencil berjuang hanya untuk sekadar menuntaskan pendidikan dasar. Persatuan sejati dimulai dari pemerataan kesempatan belajar.`
+    },
+    {
+      sila:"Sila 4–5", label:"Kerakyatan & Keadilan", color:"#8b6b3d", bg:"rgba(139,107,61,0.07)", n:"4",
+      paragraf:`Kebijakan pendidikan Indonesia masih banyak yang bersifat top-down — dirumuskan di pusat tanpa cukup melibatkan komunitas lokal, orang tua, dan bahkan guru di lapangan. Sila keempat menuntut pendidikan yang demokratis dan partisipatif, sementara sila kelima menghendaki keadilan sosial yang menyeluruh. Namun akses terhadap perangkat digital dan koneksi internet yang memadai masih sangat timpang secara geografis dan ekonomi. Pandemi COVID-19 telah mengekspos secara gamblang betapa lebarnya jurang digital ini. Keadilan pendidikan bukan berarti semua mendapat hal yang sama, melainkan semua mendapat apa yang mereka butuhkan untuk bisa berkembang.`
+    },
+  ].map((item, i) => (
+    <div key={i} className="reveal" style={{ position:"relative", overflow:"hidden", padding:"2rem", background:item.bg, border:`1px solid ${item.color}30`, borderRadius:"16px" }}>
+      <span className="serif" style={{ position:"absolute", right:"-8px", bottom:"-16px", fontSize:"5.5rem", fontWeight:900, color:"rgba(26,20,16,0.04)", lineHeight:1, pointerEvents:"none", userSelect:"none" }}>{item.n}</span>
+      <div style={{ display:"flex", alignItems:"center", gap:"12px", marginBottom:"0.75rem" }}>
+        <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:800, letterSpacing:"0.18em", textTransform:"uppercase", color:item.color }}>{item.sila}</span>
+        <div style={{ width:"1px", height:"12px", background:`${item.color}50` }} />
+        <h3 className="serif" style={{ fontWeight:700, fontSize:"1.1rem", color:"#1a1410" }}>{item.label}</h3>
+      </div>
+      <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.85rem", lineHeight:1.8, color:"rgba(26,20,16,0.65)" }}>{item.paragraf}</p>
+    </div>
+  ))}
+</div>
+        </div>
+      </section>
+
+      <div style={{ height:"1px", background:"rgba(26,20,16,0.07)", maxWidth:"900px", margin:"0 auto" }} />
+
+      {/* ══════════════════════════════════════
+          STRATEGI
+      ══════════════════════════════════════ */}
+      <section id="strategi" style={{ position:"relative", padding:"5rem 0 8rem", background:"#f5f0e8" }}>
+
+        <div style={{ position:"absolute", top:0, left:0, width:"3px", height:"100%", background:"#5a8a5e", opacity:0.2 }} />
+
+        <div style={{ maxWidth:"900px", margin:"0 auto", padding:"0 1.5rem" }}>
+
+          <div className="reveal" style={{ display:"flex", alignItems:"center", gap:"10px", marginBottom:"1rem" }}>
+            <div style={{ width:"24px", height:"2px", background:"#5a8a5e" }} />
+            <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", fontWeight:700, letterSpacing:"0.16em", textTransform:"uppercase", color:"#7a6a5a" }}>Integrasi Landasan Pendidikan</span>
+          </div>
+
+          <h2 className="reveal serif" style={{ fontSize:"clamp(2rem,5vw,3.5rem)", fontWeight:900, lineHeight:1.05, letterSpacing:"-0.02em", marginBottom:"0.5rem", color:"#1a1410" }}>
+            Strategi Menghadapi <span style={{ fontStyle:"italic", color:"#c0622a" }}>Era VUCA</span>
+          </h2>
+          <p className="reveal" style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", color:"#7a6a5a", fontSize:"0.85rem", marginBottom:"3rem" }}>
+            Membentuk generasi unggul melalui integrasi lima landasan pendidikan
+          </p>
+
+          <div style={{ display:"flex", flexDirection:"column" }}>
+            {[
+              { no:"01", color:"#c0622a", bg:"rgba(192,98,42,0.1)", icon:"💡", landasan:"Filosofis",
+  strategi:"Menanamkan Pancasila sebagai falsafah hidup",
+  deskripsi:`Landasan filosofis pendidikan Indonesia bersumber pada Pancasila dan UUD 1945 yang menjunjung tinggi harkat dan martabat manusia. Artinya, pendidikan bukan sekadar transmisi pengetahuan, melainkan proses pembentukan manusia seutuhnya yang beriman, berakhlak, dan berpikir kritis. Dalam menghadapi era VUCA, landasan ini menjadi kompas — ketika segalanya berubah cepat dan penuh ketidakpastian, nilai-nilai Pancasila menjadi pegangan yang tidak goyah. Kurikulum perlu dirancang agar siswa tidak sekadar hafal sila-sila, tetapi benar-benar menghidupinya dalam keseharian.` },
+{ no:"02", color:"#8b6b3d", bg:"rgba(139,107,61,0.1)", icon:"📜", landasan:"Historis",
+  strategi:"Belajar dari perjalanan pendidikan bangsa",
+  deskripsi:`Sejarah pendidikan Indonesia adalah sejarah perjuangan panjang — dari era kolonial yang membatasi akses belajar, hingga semangat Ki Hajar Dewantara yang memperjuangkan pendidikan untuk semua. Memahami akar historis ini penting agar generasi muda tidak hanya tahu ke mana harus pergi, tetapi juga mengerti dari mana mereka berasal. Landasan historis mengajarkan bahwa setiap reformasi pendidikan perlu mempertimbangkan konteks budaya dan perjalanan bangsa, bukan sekadar mengadopsi model pendidikan asing tanpa adaptasi yang bermakna.` },
+{ no:"03", color:"#5a8a5e", bg:"rgba(90,138,94,0.1)", icon:"🏘️", landasan:"Sosiologis",
+  strategi:"Pendidikan berbasis komunitas dan gotong royong",
+  deskripsi:`Pendidikan tidak terjadi di ruang hampa — ia hidup dalam ekosistem sosial yang melibatkan keluarga, masyarakat, dan lembaga di sekitarnya. Landasan sosiologis mengingatkan bahwa sekolah adalah cerminan masyarakat, dan masyarakat yang sehat adalah prasyarat pendidikan yang bermakna. Strategi pendidikan berbasis komunitas berarti melibatkan orang tua secara aktif, menggandeng tokoh lokal sebagai sumber belajar, dan menciptakan ruang bagi siswa untuk belajar langsung dari realitas sosial di sekitar mereka. Di era VUCA, kemampuan berkolaborasi dan membangun jaringan sosial adalah keterampilan yang tidak kalah pentingnya dari literasi digital.` },
+{ no:"04", color:"#8b6b3d", bg:"rgba(139,107,61,0.1)", icon:"🌿", landasan:"Antropologis",
+  strategi:"Pendidikan berbasis kearifan lokal dan budaya",
+  deskripsi:`Indonesia adalah rumah bagi lebih dari 300 kelompok etnis dengan kekayaan budaya yang luar biasa. Landasan antropologis menegaskan bahwa keberagaman ini bukan hambatan, melainkan aset strategis dalam membangun identitas pendidikan yang khas Indonesia. Kearifan lokal — sistem gotong royong, nilai adat, seni tradisional — mengandung kebijaksanaan yang relevan untuk menjawab tantangan zaman. Pendidikan yang mengintegrasikan budaya lokal tidak hanya memperkuat identitas siswa, tetapi juga melatih mereka untuk berpikir dari perspektif yang beragam, sebuah kemampuan krusial di dunia yang semakin terhubung.` },
+{ no:"05", color:"#b84a2e", bg:"rgba(184,74,46,0.1)", icon:"🧠", landasan:"Psikologis",
+  strategi:"Pembelajaran berpusat pada peserta didik",
+  deskripsi:`Setiap anak adalah individu unik dengan gaya belajar, kecepatan perkembangan, dan kebutuhan emosional yang berbeda-beda. Landasan psikologis pendidikan menegaskan bahwa efektivitas pembelajaran sangat bergantung pada seberapa baik kita memahami kondisi psikologis peserta didik. Di era penuh tekanan seperti sekarang, kesehatan mental siswa bukan isu pinggiran — ia adalah fondasi. Pendekatan pembelajaran yang responsif secara emosional, yang memberi ruang untuk gagal dan bangkit kembali, yang menghargai proses bukan hanya hasil, adalah wujud nyata dari pendidikan yang berpusat pada manusia seutuhnya.` },
+            ].map((item, i) => (
+              <div key={i} className="reveal" style={{ position:"relative", display:"grid", gridTemplateColumns:"56px 1fr", gap:"1.25rem", paddingBottom:"2rem" }}>
+                {/* connector line */}
+                {i < 4 && <div style={{ position:"absolute", left:"23px", top:"52px", bottom:"0", width:"1px", background:"rgba(26,20,16,0.07)" }} />}
+
+                <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:"6px" }}>
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"0.1em", color:item.color, opacity:0.8 }}>{item.no}</span>
+                  <div style={{ width:"46px", height:"46px", borderRadius:"14px", background:item.bg, border:`1px solid ${item.color}40`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:"1.25rem", flexShrink:0 }}>
+                    {item.icon}
+                  </div>
+                </div>
+
+                <div style={{ paddingTop:"2px" }}>
+                  <span style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.6rem", fontWeight:700, letterSpacing:"0.14em", textTransform:"uppercase", color:item.color, display:"block", marginBottom:"0.35rem" }}>
+                    Landasan {item.landasan}
+                  </span>
+                  <h3 className="serif" style={{ fontWeight:700, fontSize:"1.05rem", color:"#1a1410", marginBottom:"0.4rem", lineHeight:1.3 }}>{item.strategi}</h3>
+                  <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.8rem", lineHeight:1.7, color:"#7a6a5a" }}>{item.deskripsi}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* footer */}
+          {/* <div className="reveal" style={{ marginTop:"3rem", padding:"1.25rem 1.5rem", background:"#ede8db", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"12px", display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:"0.5rem" }}>
+            <div>
+              <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontWeight:700, fontSize:"0.8rem", color:"#1a1410" }}>Irenia Maisa Kamila</p>
+              <p style={{ fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.65rem", color:"#7a6a5a", letterSpacing:"0.1em" }}>NIM 2506031</p>
+            </div>
+            <div style={{ display:"flex", gap:"8px", flexWrap:"wrap" }}>
+              {["Landasan Pendidikan","2025","Infografis"].map(t => (
+                <span key={t} style={{ display:"inline-flex", alignItems:"center", gap:"6px", padding:"4px 12px", background:"rgba(26,20,16,0.05)", border:"1px solid rgba(26,20,16,0.08)", borderRadius:"99px", fontFamily:"'Plus Jakarta Sans',sans-serif", fontSize:"0.7rem", color:"#7a6a5a" }}>{t}</span>
+              ))}
+            </div>
+          </div> */}
         </div>
       </section>
 
     </div>
   )
 }
-
-export default App
